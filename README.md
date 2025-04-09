@@ -1,5 +1,5 @@
 # Friend-Or-Foe
-FriendOrFoe collection of microbial datasets obtained from metabolic modeling
+FriendOrFoe collection of environmental datasets obtained from metabolic modeling of microbial communities [AGORA](https://www.nature.com/articles/nbt.3703) and [CARVEME](https://academic.oup.com/nar/article/46/15/7542/5042022).
 ![Logo](https://github.com/powidla/Friend-Or-Foe/blob/main/assets/new.drawio.png?raw=true)
 # Getting started
 Download the data: https://huggingface.co/datasets/powidla/FriendOrFoe
