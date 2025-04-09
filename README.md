@@ -5,15 +5,12 @@ FriendOrFoe is a collection of environmental datasets obtained from metabolic mo
 Download the data: https://huggingface.co/datasets/powidla/FriendOrFoe
 # Baseline Models
 
-- GBDTs
+- Supervised models
 
-- FT-Transformer
+- Unsupervised models
 
-- TabM
+- Generative models
 
-- TabR
-
-- TabDiff
 # Demo Notebooks
 The notebooks contain a simple example of using baseline models for predicting microbial interactions.
 # License
