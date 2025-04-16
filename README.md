@@ -3,8 +3,7 @@ FriendOrFoe is a collection of environmental datasets obtained from metabolic mo
 ![Logo](https://github.com/powidla/Friend-Or-Foe/blob/main/assets/forgit.png?raw=true) 
 # Getting started
 Download the data: https://huggingface.co/datasets/powidla/FriendOrFoe
-`````
-python
+`````python
 from huggingface_hub import hf_hub_download
 import pandas as pd
 
