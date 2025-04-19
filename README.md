@@ -1,6 +1,10 @@
 # Friend-Or-Foe
 Welcome to Friend or Foe repository! 
+
+
 <img src="https://github.com/powidla/Friend-Or-Foe/blob/main/assets/cartoon_v2.png?raw=true" alt="Logo" width="500"/> 
+
+
 FriendOrFoe is a collection of environmental datasets obtained from metabolic modeling of microbial communities [AGORA](https://www.nature.com/articles/nbt.3703) and [CARVEME](https://academic.oup.com/nar/article/46/15/7542/5042022).  FriendOrFoe gathers 64 tabular datasets (16 for AGORA with 100 additional compounds, 16 for AGORA with 50 additional compounds, 16 for CARVEME with 100 additional compounds, 16 for CARVEME with 50 additional compounds), which were constructed by analysing more than 10 000 pairs of microbes. Our collection is suitable for four machine learning frameworks.
 ![Logo](https://github.com/powidla/Friend-Or-Foe/blob/main/assets/forgit.png?raw=true) 
 # Getting started
