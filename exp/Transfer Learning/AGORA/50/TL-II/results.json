@@ -1,0 +1,50 @@
+{
+    "TabM": {
+        "Validation Accuracy": 0.7639096222452749,
+        "Validation ROC AUC": 0.8831781716611647,
+        "Validation MCC": 0.5593795093858194,
+        "Test Accuracy": 0.7639096222452749,
+        "Test ROC AUC": 0.8831781716611647,
+        "Test MCC": 0.5593795093858194
+    },
+    "FT-Transformer": {
+        "Validation Accuracy": 0.6875186600207474,
+        "Validation ROC AUC": 0.7948603544950482,
+        "Validation MCC": 0.5034415584472375,
+        "Test Accuracy": 0.6875186600207474,
+        "Test ROC AUC": 0.7948603544950482,
+        "Test MCC": 0.5034415584472375
+    },
+    "LightGBM": {
+        "Validation Accuracy": 0.45834577334716496,
+        "Validation ROC AUC": 0.5299069029966988,
+        "Validation MCC": 0.3356277056314916,
+        "Test Accuracy": 0.45834577334716496,
+        "Test ROC AUC": 0.5299069029966988,
+        "Test MCC": 0.3356277056314916
+    },
+    "XGBoost": {
+        "Validation Accuracy": 0.4812630590145242,
+        "Validation ROC AUC": 0.5564022471468234,
+        "Validation MCC": 0.3524090819140672,
+        "Test Accuracy": 0.4812630590145242,
+        "Test ROC AUC": 0.5564022471468234,
+        "Test MCC": 0.3524090819140672
+    },
+    "CatBoost": {
+        "Validation Accuracy": 0.4965412544594287,
+        "Validation ROC AUC": 0.5740668115790773,
+        "Validation MCC": 0.3635966811007826,
+        "Test Accuracy": 0.4965412544594287,
+        "Test ROC AUC": 0.5740668115790773,
+        "Test MCC": 0.3635966811007826
+    },
+    "TabNet": {
+        "Validation Accuracy": 0.5534525178667028,
+        "Validation ROC AUC": 0.6398625842188479,
+        "Validation MCC": 0.4052704442011773,
+        "Test Accuracy": 0.5534525178667028,
+        "Test ROC AUC": 0.6398625842188479,
+        "Test MCC": 0.4052704442011773
+    }
+}
