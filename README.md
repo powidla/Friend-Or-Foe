@@ -47,7 +47,11 @@ The notebooks contain a simple example of using baseline models for predicting m
 
 # Reproducing the results
 
+### Supervised models
 
+### Supervised models
+
+### Generative models
 
 # License
 FriendOrFoe is under the Apache 2.0 license for code found on the associated GitHub repo and the Creative Commons Attribution 4.0 license for data hosted on HuggingFace. The LICENSE file for the repo can be found in the top-level directory.
