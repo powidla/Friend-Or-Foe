@@ -54,9 +54,22 @@ The notebooks contain a simple example of using baseline models for predicting m
 ### Supervised models
 
 #### TabM
+To train and test TabM we followed an [example](https://github.com/yandex-research/tabm/blob/main/example.ipynb). 
+`````bash
+mamba env create -f tabm.yaml
+mkdir FOFdata
+python main.py 
+
+`````
 
 #### FT-Transformer
+To train and test FT-Transformer we followed an [example](https://github.com/yandex-research/rtdl-revisiting-models/blob/main/package/example.ipynb). 
+`````bash
+mamba env create -f ft.yaml
+mkdir FOFdata
+python main.py 
 
+`````
 #### TabNet
 
 #### GBDTs
