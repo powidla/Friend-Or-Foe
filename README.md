@@ -53,5 +53,13 @@ The notebooks contain a simple example of using baseline models for predicting m
 
 ### Generative models
 
+#### TVAE, CTGAN and TabDDPM
+
+To test TVAE, CTGAN and TabDDPM we used [synthcity](https://github.com/vanderschaarlab/synthcity) package and adapted officially provided [examples](https://github.com/vanderschaarlab/synthcity/tree/main/tutorials/plugins/generic). 
+
+#### TabDiff
+
+To train and test TabDiff we followed the [guidelines](https://github.com/MinkaiXu/TabDiff). 
+
 # License
 FriendOrFoe is under the Apache 2.0 license for code found on the associated GitHub repo and the Creative Commons Attribution 4.0 license for data hosted on HuggingFace. The LICENSE file for the repo can be found in the top-level directory.
