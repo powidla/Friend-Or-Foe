@@ -35,7 +35,9 @@ y_train = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=y_train_ID, repo
 y_val = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=y_val_ID, repo_type="dataset"))
 y_test = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=y_test_ID, repo_type="dataset"))
 `````
-# Baseline Models
+# Baseline Demo Notebooks
+
+The notebooks contain a simple example of using baseline models for predicting microbial interactions.
 
 - [Supervised models](https://github.com/powidla/Friend-Or-Foe/tree/main/examples/Supervised)
 
@@ -43,7 +45,5 @@ y_test = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=y_test_ID, repo_t
 
 - Generative models
 
-# Demo Notebooks
-The notebooks contain a simple example of using baseline models for predicting microbial interactions.
 # License
 FriendOrFoe is under the Apache 2.0 license for code found on the associated GitHub repo and the Creative Commons Attribution 4.0 license for data hosted on HuggingFace. The LICENSE file for the repo can be found in the top-level directory.
