@@ -59,7 +59,15 @@ To test TVAE, CTGAN and TabDDPM we used [synthcity](https://github.com/vandersch
 
 #### TabDiff
 
-To train and test TabDiff we followed the [guidelines](https://github.com/MinkaiXu/TabDiff). 
+To train and test TabDiff we followed the [guidelines](https://github.com/MinkaiXu/TabDiff). The example for the AGORA50 dataset is below
+`````bash
+git clone https://github.com/MinkaiXu/TabDiff
+mamba env create -f tabdiff.yaml
+cd data
+mkdir GenAGORA50
+python process_dataset.py --dataname GenAGORA50
+python main.py --dataname GenAGORA50 --mode train --no_wandb --non_learnable_schedule --exp_name GenAGORA50
 
+`````
 # License
 FriendOrFoe is under the Apache 2.0 license for code found on the associated GitHub repo and the Creative Commons Attribution 4.0 license for data hosted on HuggingFace. The LICENSE file for the repo can be found in the top-level directory.
