@@ -1,5 +1,5 @@
 # Friend-Or-Foe
-Welcome to Friend or Foe repository! 
+Welcome to the Friend or Foe repository! 
 
 
 <div align="center">
