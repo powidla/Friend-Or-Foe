@@ -36,8 +36,8 @@ y_val = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=y_val_ID, repo_typ
 y_test = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=y_test_ID, repo_type="dataset"))
 `````
 # Baseline Demo Notebooks
-#### Quickstart
-
+#### Quickstart notebook
+We provide an end-to-end example how to predict competitive and cooperative interactions.
 
 #### Examples
 
