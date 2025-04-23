@@ -78,8 +78,19 @@ python main.py
 `````
 #### TabNet
 To train and test TabNet we followed instructions from the [package](https://dreamquark-ai.github.io/tabnet/). 
-#### GBDTs
+`````bash
+mamba env create -f tabnet.yaml
+mkdir FOFdata
+python main.py 
 
+`````
+#### GBDTs
+`````bash
+mamba env create -f catboost.yaml
+mkdir FOFdata
+python main.py 
+
+`````
 ### Supervised models
 
 ### Generative models
