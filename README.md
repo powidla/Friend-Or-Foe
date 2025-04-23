@@ -100,5 +100,13 @@ python process_dataset.py --dataname GenAGORA50
 python main.py --dataname GenAGORA50 --mode train --no_wandb --non_learnable_schedule --exp_name GenAGORA50
 
 `````
+To evaluate and calc metrics 
+`````bash
+mamba env create -f synthcity.yaml
+cd Info
+cp info.json
+python main.py --dataname GenAGORA50 --mode test --mode test --report --no_wandb
+
+`````
 # License
 FriendOrFoe is under the Apache 2.0 license for code found on the associated GitHub repo and the Creative Commons Attribution 4.0 license for data hosted on HuggingFace. The LICENSE file for the repo can be found in the top-level directory.
