@@ -90,7 +90,7 @@ To test TVAE, CTGAN and TabDDPM we used [synthcity](https://github.com/vandersch
 
 #### TabDiff
 
-To train and test TabDiff we followed the [guidelines](https://github.com/MinkaiXu/TabDiff). The example for the AGORA50 dataset is below
+To train and test TabDiff we followed the [guidelines](https://github.com/MinkaiXu/TabDiff). The example we used for the AGORA50 dataset is below
 `````bash
 git clone https://github.com/MinkaiXu/TabDiff
 mamba env create -f tabdiff.yaml
@@ -105,7 +105,7 @@ To evaluate and calc metrics
 mamba env create -f synthcity.yaml
 cd Info
 cp info.json
-python main.py --dataname GenAGORA50 --mode test --mode test --report --no_wandb
+python main.py --dataname GenAGORA50 --mode test --report --no_wandb
 
 `````
 # License
