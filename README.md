@@ -86,7 +86,7 @@ python main.py
 `````
 #### GBDTs
 `````bash
-mamba env create -f catboost.yaml
+mamba env create -f gbdts.yaml
 mkdir FOFdata
 python main.py 
 
