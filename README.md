@@ -37,7 +37,7 @@ y_test = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=y_test_ID, repo_t
 `````
 # Baseline Demo Notebooks
 #### Quickstart notebook
-We provide an end-to-end example how to predict competitive and cooperative interactions.
+We provide an end-to-end example on how to predict competitive and cooperative interactions.
 
 #### Examples
 
