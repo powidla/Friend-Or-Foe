@@ -37,9 +37,9 @@ y_test = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=y_test_ID, repo_t
 `````
 # Baseline Models
 
-- Supervised models
+- [Supervised models](https://github.com/powidla/Friend-Or-Foe/tree/main/examples/Supervised)
 
-- Unsupervised models
+- [Unsupervised models](https://github.com/powidla/Friend-Or-Foe/tree/main/examples/Supervised)
 
 - Generative models
 
