@@ -86,7 +86,7 @@ To train and test TabNet we followed instructions from the [package](https://dre
 
 #### TVAE, CTGAN and TabDDPM
 
-To test TVAE, CTGAN and TabDDPM we used [synthcity](https://github.com/vanderschaarlab/synthcity) package and adapted officially provided [examples](https://github.com/vanderschaarlab/synthcity/tree/main/tutorials/plugins/generic). 
+To test TVAE, CTGAN and TabDDPM we used [synthcity](https://github.com/vanderschaarlab/synthcity) package and adapted officially provided [examples](https://github.com/vanderschaarlab/synthcity/tree/main/tutorials/plugins/generic). We calculated $\alpha$-Precision and $\beta$-Recall by using $\texttt{eval_statistical}$ from $\texttt{synthcity.metrics}$.
 
 #### TabDiff
 
