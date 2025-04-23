@@ -71,7 +71,7 @@ python main.py
 
 `````
 #### TabNet
-To train and test TabNet we use the [package](https://dreamquark-ai.github.io/tabnet/)
+To train and test TabNet we followed instructions from the [package](https://dreamquark-ai.github.io/tabnet/). 
 #### GBDTs
 
 ### Supervised models
