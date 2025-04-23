@@ -49,6 +49,14 @@ The notebooks contain a simple example of using baseline models for predicting m
 
 ### Supervised models
 
+#### TabM
+
+#### FT-Transformer
+
+#### TabNet
+
+#### GBDTs
+
 ### Supervised models
 
 ### Generative models
