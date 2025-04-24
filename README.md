@@ -57,10 +57,10 @@ The notebooks contain a simple example of using baseline models for predicting m
 
 # Reproducing the results
 
-### Unsupervised models
+### Supervised models
 
 #### TabM
-To train and test TabM we followed an [example](https://github.com/yandex-research/tabm/blob/main/example.ipynb). We donwloaded the data into $\texttt{FOFdata}$ folder.
+To train and test [TabM](https://openreview.net/forum?id=Sd4wYYOhmY) we followed an [example](https://github.com/yandex-research/tabm/blob/main/example.ipynb). We donwloaded the data into $\texttt{FOFdata}$ folder.
 `````bash
 mamba env create -f tabm.yaml
 mkdir FOFdata
@@ -69,7 +69,7 @@ python main.py
 `````
 
 #### FT-Transformer
-To train and test FT-Transformer we followed an [example](https://github.com/yandex-research/rtdl-revisiting-models/blob/main/package/example.ipynb). 
+To train and test [FT-Transformer](https://github.com/yandex-research/rtdl-revisiting-models/tree/main) we followed an [example](https://github.com/yandex-research/rtdl-revisiting-models/blob/main/package/example.ipynb). 
 `````bash
 mamba env create -f ft.yaml
 mkdir FOFdata
@@ -77,7 +77,7 @@ python main.py
 
 `````
 #### TabNet
-To train and test TabNet we followed instructions from the [package](https://dreamquark-ai.github.io/tabnet/). 
+To train and test [TabNet](https://arxiv.org/abs/1908.07442) we followed instructions from the [package](https://dreamquark-ai.github.io/tabnet/). 
 `````bash
 mamba env create -f tabnet.yaml
 mkdir FOFdata
@@ -85,13 +85,14 @@ python main.py
 
 `````
 #### GBDTs
+We evaluate [XGBoost](https://arxiv.org/abs/1603.02754), [LightGBM](https://proceedings.neurips.cc/paper_files/paper/2017/file/6449f44a102fde848669bdd9eb6b76fa-Paper.pdf) and [Catboost](https://arxiv.org/abs/1810.11363) as our baselines here.
 `````bash
 mamba env create -f gbdts.yaml
 mkdir FOFdata
 python main.py 
 
 `````
-### Supervised models
+### Unsupervised models
 
 ### Generative models
 
