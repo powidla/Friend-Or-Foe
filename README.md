@@ -60,7 +60,7 @@ The notebooks contain a simple example of using baseline models for predicting m
 ### Unsupervised models
 
 #### TabM
-To train and test TabM we followed an [example](https://github.com/yandex-research/tabm/blob/main/example.ipynb). 
+To train and test TabM we followed an [example](https://github.com/yandex-research/tabm/blob/main/example.ipynb). We donwloaded the data into $\texttt{FOFdata}$ folder.
 `````bash
 mamba env create -f tabm.yaml
 mkdir FOFdata
