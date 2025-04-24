@@ -93,6 +93,12 @@ python main.py
 
 `````
 ### Unsupervised models
+`````bash
+mamba env create -f uns.yaml
+mkdir FOFdata
+python main.py 
+
+`````
 
 ### Generative models
 
