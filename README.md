@@ -57,7 +57,7 @@ The notebooks contain a simple example of using baseline models for predicting m
 
 # Reproducing the results
 
-### Supervised models
+### Unsupervised models
 
 #### TabM
 To train and test TabM we followed an [example](https://github.com/yandex-research/tabm/blob/main/example.ipynb). 
