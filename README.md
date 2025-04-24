@@ -13,7 +13,7 @@ FriendOrFoe is a collection of environmental datasets obtained from [metabolic m
 
 - examples: provides notebooks with examples on various tasks
 - exp: stores $\texttt{.json}$ files with final metrics
-- models: contains codes, environments and $\texttt{.json}$ files for the experiments that were not executed in a notebook format
+- models: contains codes, environments and $\texttt{.json}$ files for the experiments
 
 # Getting started
 Download the data: https://huggingface.co/datasets/powidla/FriendOrFoe
