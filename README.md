@@ -104,11 +104,11 @@ python main.py
 
 #### TVAE, CTGAN and TabDDPM
 
-To test TVAE, CTGAN and TabDDPM we used [synthcity](https://github.com/vanderschaarlab/synthcity) package and adapted officially provided [examples](https://github.com/vanderschaarlab/synthcity/tree/main/tutorials/plugins/generic). We calculated $\alpha$-Precision and $\beta$-Recall by using $\texttt{eval statistical}$ from $\texttt{synthcity.metrics}$.
+To test [TVAE](https://arxiv.org/pdf/1907.00503), [CTGAN](https://arxiv.org/pdf/1907.00503) and [TabDDPM](https://proceedings.mlr.press/v202/kotelnikov23a/kotelnikov23a.pdf) we used [synthcity](https://github.com/vanderschaarlab/synthcity) package and adapted officially provided [examples](https://github.com/vanderschaarlab/synthcity/tree/main/tutorials/plugins/generic). We calculated $\alpha$-Precision and $\beta$-Recall by using $\texttt{eval statistical}$ from $\texttt{synthcity.metrics}$.
 
 #### TabDiff
 
-To train and test TabDiff we followed the [guidelines](https://github.com/MinkaiXu/TabDiff). The example we used for the AGORA50 dataset is below
+To train and test [TabDiff](https://openreview.net/pdf?id=LoSpFLqaHg) we followed the [guidelines](https://github.com/MinkaiXu/TabDiff). The example we used for the AGORA50 dataset is below
 `````bash
 git clone https://github.com/MinkaiXu/TabDiff
 mamba env create -f tabdiff.yaml
