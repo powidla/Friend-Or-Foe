@@ -64,6 +64,7 @@ For example,
 `````python
 FOFdata/Regression/CARVEME/50/GR-III/csv/X_train_GR-III.csv
 `````
+Scripts below assume that after creating $\texttt{FOFdata}$ folder the structure follows above structure.
 ### Supervised models
 
 #### TabM
