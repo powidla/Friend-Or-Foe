@@ -16,7 +16,7 @@ FriendOrFoe is a collection of environmental datasets obtained from [metabolic m
 - models: contains codes, environments and $\texttt{.json}$ files for the experiments
 
 # Getting started
-Download the data: https://huggingface.co/datasets/powidla/FriendOrFoe
+Download the data from our HugginFace repo: https://huggingface.co/datasets/powidla/Friend-Or-Foe
 `````python
 from huggingface_hub import hf_hub_download
 import pandas as pd
