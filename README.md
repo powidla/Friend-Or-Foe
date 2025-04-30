@@ -56,7 +56,7 @@ The notebooks contain a simple example of using baseline models for predicting m
 - [Generative models](https://github.com/powidla/Friend-Or-Foe/tree/main/examples/Generative)
 
 # Reproducing the results
-To execute the lines below data path should be organized as follows 
+To execute the lines below for Supervised models data path should be organized as follows 
 `````python
 FOFdata/<Task>/<Collection>/<Group>/<Dataset>/csv/<name>.csv
 `````
