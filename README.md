@@ -133,7 +133,7 @@ python process_dataset.py --dataname GenAGORA50
 python main.py --dataname GenAGORA50 --mode train --no_wandb --non_learnable_schedule --exp_name GenAGORA50
 
 `````
-To evaluate and calc metrics 
+To evaluate and calculate metrics 
 `````bash
 mamba env create -f synthcity.yaml
 cd Info
