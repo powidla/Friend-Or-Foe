@@ -1,5 +1,5 @@
 # Welcome to the Friend or Foe repository! 
-
+[![HuggingFace](https://img.shields.io/badge/HuggingFace-Model-yellow)](https://huggingface.co/datasets/powidla/Friend-Or-Foe)
 
 
 <div align="center">
