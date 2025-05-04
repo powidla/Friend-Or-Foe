@@ -1,6 +1,6 @@
 # Welcome to the Friend or Foe repository! 
 [![HuggingFace](https://img.shields.io/badge/HuggingFace-Dataset-yellow)](https://huggingface.co/datasets/powidla/Friend-Or-Foe)
-
+[![bioRxiv](https://img.shields.io/badge/bioRxiv-2025.04.12345-blue)](https://www.biorxiv.org/content/10.1101/2024.07.03.601864v1.full.pdf)
 
 <div align="center">
   <img src="https://github.com/powidla/Friend-Or-Foe/blob/main/assets/cartoon_v2.png?raw=true" alt="Logo" width="500"/>
