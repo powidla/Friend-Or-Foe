@@ -1,0 +1,85 @@
+Running TabDiff training on...
+Train Mode is Enabled
+NEW training is started
+No NaNs in numerical features, skipping
+No NaNs in numerical features, skipping
+GenAGORA100 does not have its validation set. During MLE evaluation, a validation set will be splitted from the training set!
+The number of parameters =  13987768
+The config of the current run is : 
+ {
+    "data": {
+        "dequant_dist": "none",
+        "int_dequant_factor": 0
+    },
+    "unimodmlp_params": {
+        "num_layers": 2,
+        "d_token": 4,
+        "n_head": 1,
+        "factor": 32,
+        "bias": true,
+        "dim_t": 1024,
+        "use_mlp": true,
+        "d_numerical": 424,
+        "categories": [
+            3
+        ]
+    },
+    "diffusion_params": {
+        "num_timesteps": 50,
+        "scheduler": "power_mean_per_column",
+        "cat_scheduler": "log_linear_per_column",
+        "noise_dist": "uniform_t",
+        "sampler_params": {
+            "stochastic_sampler": true,
+            "second_order_correction": true
+        },
+        "edm_params": {
+            "precond": true,
+            "sigma_data": 1.0,
+            "net_conditioning": "sigma"
+        },
+        "noise_dist_params": {
+            "P_mean": -1.2,
+            "P_std": 1.2
+        },
+        "noise_schedule_params": {
+            "sigma_min": 0.002,
+            "sigma_max": 80,
+            "rho": 7,
+            "eps_max": 0.001,
+            "eps_min": 1e-05,
+            "rho_init": 7.0,
+            "rho_offset": 5.0,
+            "k_init": -6.0,
+            "k_offset": 1.0
+        }
+    },
+    "train": {
+        "main": {
+            "steps": 1000,
+            "lr": 0.001,
+            "weight_decay": 0,
+            "ema_decay": 0.997,
+            "batch_size": 4096,
+            "check_val_every": 2000,
+            "lr_scheduler": "reduce_lr_on_plateau",
+            "factor": 0.9,
+            "reduce_lr_patience": 50,
+            "closs_weight_schedule": "anneal",
+            "c_lambda": 1.0,
+            "d_lambda": 1.0
+        }
+    },
+    "sample": {
+        "batch_size": 10000
+    },
+    "model_save_path": "/proj/carroll_ddls/users/x_olche/FOF/TabDiff/tabdiff/ckpt/GenAGORA100/agora100",
+    "result_save_path": "/proj/carroll_ddls/users/x_olche/FOF/TabDiff/tabdiff/result/GenAGORA100/agora100",
+    "deterministic": false
+}
+==============Starting Trainin Loop, total number of epoch = 1000==============
+Epoch 00231: reducing learning rate of group 0 to 9.0000e-04.
+Epoch 00748: reducing learning rate of group 0 to 8.1000e-04.
+Epoch 00989: reducing learning rate of group 0 to 7.2900e-04.
+==============Ending Trainnig Loop, totoal training time = 3171.8451867103577==============
+
