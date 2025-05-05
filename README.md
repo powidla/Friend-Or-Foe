@@ -133,6 +133,8 @@ python process_dataset.py --dataname GenAGORA50
 python main.py --dataname GenAGORA50 --mode train --no_wandb --non_learnable_schedule --exp_name GenAGORA50
 
 `````
+Alternative way is to skip preprocessing by downloading files from [here](https://github.com/powidla/Friend-Or-Foe/tree/main/models/tabdiff).
+
 To evaluate and calculate metrics 
 `````bash
 mamba env create -f synthcity.yaml
