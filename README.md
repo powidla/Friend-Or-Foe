@@ -112,7 +112,7 @@ python main.py
 
 #### TVAE, CTGAN and TabDDPM
 
-To test [TVAE](https://arxiv.org/pdf/1907.00503), [CTGAN](https://arxiv.org/pdf/1907.00503) and [TabDDPM](https://proceedings.mlr.press/v202/kotelnikov23a/kotelnikov23a.pdf) we used [synthcity](https://github.com/vanderschaarlab/synthcity) package and adapted officially provided [examples](https://github.com/vanderschaarlab/synthcity/tree/main/tutorials/plugins/generic). We calculated $\alpha$-Precision and $\beta$-Recall by using $\texttt{eval statistical}$ from $\texttt{synthcity.metrics}$.
+To test [TVAE](https://arxiv.org/pdf/1907.00503), [CTGAN](https://arxiv.org/pdf/1907.00503) and [TabDDPM](https://proceedings.mlr.press/v202/kotelnikov23a/kotelnikov23a.pdf) we used [synthcity](https://github.com/vanderschaarlab/synthcity) package and adapted officially provided [examples](https://github.com/vanderschaarlab/synthcity/tree/main/tutorials/plugins/generic). We calculated $\alpha$-Precision and $\beta$-Recall by using `````eval statistical````` from `````synthcity.metrics`````.
 `````bash
 mamba env create -f synthcity.yaml
 cd FOFdata
