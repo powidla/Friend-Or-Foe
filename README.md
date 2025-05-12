@@ -68,7 +68,7 @@ Scripts below assume that after creating `````FOFdata````` folder the above stru
 ### Supervised models
 
 #### TabM
-To train and test [TabM](https://openreview.net/forum?id=Sd4wYYOhmY) we followed an [example](https://github.com/yandex-research/tabm/blob/main/example.ipynb). We donwloaded the data into $\texttt{FOFdata}$ folder.
+To train and test [TabM](https://openreview.net/forum?id=Sd4wYYOhmY) we followed an [example](https://github.com/yandex-research/tabm/blob/main/example.ipynb). We donwloaded the data into `````FOFdata````` folder.
 `````bash
 mamba env create -f tabm.yaml
 mkdir FOFdata
