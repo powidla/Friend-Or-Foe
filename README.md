@@ -12,8 +12,8 @@ FriendOrFoe is a collection of environmental datasets obtained from [metabolic m
 # Repository structure
 
 - examples: provides notebooks with examples on various tasks
-- exp: stores $\texttt{.json}$ files with final metrics
-- models: contains codes, environments and $\texttt{.json}$ files for the experiments
+- exp: stores `````.json````` files with final metrics
+- models: contains codes, environments and `````.json````` files for the experiments
 
 # Getting started
 Download the data from our HugginFace repo: https://huggingface.co/datasets/powidla/Friend-Or-Foe
