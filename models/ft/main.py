@@ -12,6 +12,7 @@ import sklearn.metrics
 import sklearn.model_selection
 import sklearn.preprocessing
 import torch
+import json
 import torch.nn.functional as F
 import torch.optim
 from torch import Tensor
@@ -248,8 +249,7 @@ def evaluate(part: str) -> float:
 
 print(f'Test score before training: {evaluate("test"):.4f}')
 
-import json
-
+# To save in dir give name to str
 def calculate_and_save_metrics(part: str, save_path: str = "FT-AG-100-BC-III_metrics.json"):
     model.eval()
     eval_batch_size = 256  # Much more memory-efficient
@@ -317,40 +317,40 @@ best = {
 }
 
 print(f"Device: {device.type.upper()}")
-# print("-" * 88 + "\n")
-# timer.run()
-# for epoch in range(n_epochs):
-#     for batch in tqdm(
-#         delu.iter_batches(data["train"], batch_size, shuffle=True),
-#         desc=f"Epoch {epoch}",
-#         total=epoch_size,
-#     ):
-#         model.train()
-#         optimizer.zero_grad()
-#         loss = loss_fn(apply_model(batch), batch["y"].squeeze(-1))
-#         loss.backward()
-#         optimizer.step()
+print("-" * 88 + "\n")
+timer.run()
+for epoch in range(n_epochs):
+    for batch in tqdm(
+        delu.iter_batches(data["train"], batch_size, shuffle=True),
+        desc=f"Epoch {epoch}",
+        total=epoch_size,
+    ):
+        model.train()
+        optimizer.zero_grad()
+        loss = loss_fn(apply_model(batch), batch["y"].squeeze(-1))
+        loss.backward()
+        optimizer.step()
 
-#     val_score = evaluate("val")
-#     test_score = evaluate("test")
-#     print(f"(val) {val_score:.4f} (test) {test_score:.4f} [time] {timer}")
+    val_score = evaluate("val")
+    test_score = evaluate("test")
+    print(f"(val) {val_score:.4f} (test) {test_score:.4f} [time] {timer}")
 
-#     early_stopping.update(val_score)
-#     if early_stopping.should_stop():
-#         break
+    early_stopping.update(val_score)
+    if early_stopping.should_stop():
+        break
 
-#     if val_score > best["val"]:
-#         print("New best epoch!")
-#         best = {"val": val_score, "test": test_score, "epoch": epoch}
+    if val_score > best["val"]:
+        print("New best epoch!")
+        best = {"val": val_score, "test": test_score, "epoch": epoch}
 
-#         torch.save(model.state_dict(), "FT_AG-100-BC-I.pt")
-#         # print("Saved model checkpoint to 'best_model.pt'")
+        torch.save(model.state_dict(), "FT_AG-100-BC-I.pt")
+        # print("Saved model checkpoint to 'best_model.pt'")
 
 
-# print("\n\nResult:")
-# print(best)
+print("\n\nResult:")
+print(best)
 
-# Restore best model
+# store best model
 model.load_state_dict(torch.load("FT_AG-100-BC-III.pt"))
 
 # # Calculate and save final metrics
