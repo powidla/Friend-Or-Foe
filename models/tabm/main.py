@@ -32,8 +32,9 @@ seed = 0
 random.seed(seed)
 np.random.seed(seed + 1)
 torch.manual_seed(seed + 2)
-pass
 
+### The following code lines come from the example : https://github.com/yandex-research/tabm/blob/main/example.ipynb
+### Friend or Foe data is defined below example's preprocessing 
 # >>> Dataset.
 TaskType = Literal['regression', 'binclass', 'multiclass']
 
@@ -151,7 +152,7 @@ if task_type == 'regression':
 else:
     regression_label_stats = None
 
-
+### Read the Friend or Foe data
 X_train = pd.read_csv("FOFdata/Regression/CARVEME/50/GR-III/csv/X_train_GR-III.csv")
 X_val = pd.read_csv("FOFdata/Regression/CARVEME/50/GR-III/csv/X_val_GR-III.csv")
 X_test = pd.read_csv("FOFdata/Regression/CARVEME/50/GR-III/csv/X_test_GR-III.csv")
