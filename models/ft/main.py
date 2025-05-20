@@ -27,6 +27,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Set random seeds in all libraries.
 delu.random.seed(0)
 
+### The following code lines come from the example : https://github.com/yandex-research/rtdl-revisiting-models/blob/main/package/README.md#end-to-end-examples
+### Friend or Foe data is defined below example's preprocessing 
+
 # >>> Dataset.
 TaskType = Literal["regression", "binclass", "multiclass"]
 
