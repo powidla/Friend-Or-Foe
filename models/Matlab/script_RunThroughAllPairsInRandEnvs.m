@@ -11,11 +11,11 @@ conc = -1000;
 %together maximising A or B), interactions, EC fluxes and rxn fluxes for
 %all possible pairings in that database
 
-%% set up:
-pathWcommonfuns = '/Users/sasha/Documents/FriendVsFoeProject/code/common_functions/';
+%% set up: this is a path to all the other functions used in this run
+pathWcommonfuns = '.../FriendVsFoeProject/code/common_functions/';
 addpath(pathWcommonfuns)
 
-% filedr_FvFProjData = '/Users/josephinesolowiej-wedderburn/Documents/FriendVsFoeProject/data/EnvsForSpecialPairs_fromBigRun100/';
+% filedr_FvFProjData = '.../FriendVsFoeProject/data/EnvsForSpecialPairs_fromBigRun100/';
 
 % %%collection: AGORA
 collection = 'AGORA';     %which collection are we in
@@ -32,14 +32,14 @@ M_spec = [569, 505, 244, 355, 678];
 % nMs = 5587;
 % nECtot = 499;
 % M_spec = [3404, 2057, 4618, 3789, 2489];
+% replace ... with real path 
+filedr_metmodels =  ['.../General_MetModels/Data/' collection '_HGTmodels/'];
 
-filedr_metmodels =  ['/Users/sasha/Documents/General_MetModels/Data/' collection '_HGTmodels/'];
-
-% savestr_start = ['/Users/sasha/Documents/FriendVsFoeProject/data/TestRunFeb2025_SpecIDs_withAll_someEnvs/', colAbr];
-savestr_start = ['/Users/sasha/Documents/FriendVsFoeProject/data/Run_SpecIDs_withAll_500Envs/', colAbr];
+% savestr_start = ['.../FriendVsFoeProject/data/TestRunFeb2025_SpecIDs_withAll_someEnvs/', colAbr];
+savestr_start = ['.../FriendVsFoeProject/data/Run_SpecIDs_withAll_500Envs/', colAbr];
 
 %% which compounds are always essential for all compounds in collection
-filedr_gen =  '/Users/sasha/Documents/General_MetModels/Data/';
+filedr_gen =  '.../General_MetModels/Data/';
 load([filedr_gen, 'metab_models_extras/', colAbr, 'EssECs.mat'])
 
 %identify always essential compounds:
