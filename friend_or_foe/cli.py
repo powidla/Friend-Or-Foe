@@ -6,7 +6,7 @@ import json
 from typing import Dict, Any
 
 from .data.loader import FriendOrFoeDataLoader
-from .models.base import TabNetModel
+from .model.base import TabNetModel
 
 
 def main():
