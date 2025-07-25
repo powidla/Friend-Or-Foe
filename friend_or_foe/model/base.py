@@ -1,3 +1,4 @@
+
 """
 Base Model Classes and CLI Interface for Friend-Or-Foe Package
 """
@@ -206,3 +207,364 @@ class TabNetModel(BaseModel):
             
         X_np = X.values.astype(np.float32)
         return self.model.predict_proba(X_np)
+    
+    def save_model(self, filepath: str):
+        """Save TabNet model."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before saving")
+        
+        import pickle
+        model_data = {
+            'model': self.model,
+            'model_params': self.model_params,
+            'training_history': self.training_history
+        }
+        
+        with open(filepath, 'wb') as f:
+            pickle.dump(model_data, f)
+    
+    def load_model(self, filepath: str):
+        """Load TabNet model."""
+        import pickle
+        
+        with open(filepath, 'rb') as f:
+            model_data = pickle.load(f)
+        
+        self.model = model_data['model']
+        self.model_params = model_data['model_params']
+        self.training_history = model_data.get('training_history', {})
+        self.is_fitted = True
+
+
+class XGBoostModel(BaseModel):
+    """
+    XGBoost model implementation for Friend-Or-Foe datasets.
+    """
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        import xgboost as xgb
+        self.xgb = xgb
+        
+        # Set default parameters if not provided
+        default_params = {
+            'objective': 'binary:logistic',
+            'eval_metric': 'logloss',
+            'max_depth': 6,
+            'learning_rate': 0.1,
+            'n_estimators': 100,
+            'random_state': 42
+        }
+        
+        for key, value in default_params.items():
+            if key not in self.model_params:
+                self.model_params[key] = value
+    
+    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame,
+            X_val: Optional[pd.DataFrame] = None,
+            y_val: Optional[pd.DataFrame] = None,
+            task_type: str = "classification") -> 'XGBoostModel':
+        """Fit XGBoost model."""
+        
+        # Prepare parameters based on task type
+        if task_type.lower() == "classification":
+            # Determine if binary or multiclass
+            n_classes = len(np.unique(y_train.values.flatten()))
+            if n_classes == 2:
+                self.model_params['objective'] = 'binary:logistic'
+                self.model_params['eval_metric'] = 'logloss'
+            else:
+                self.model_params['objective'] = 'multi:softprob'
+                self.model_params['eval_metric'] = 'mlogloss'
+                self.model_params['num_class'] = n_classes
+            
+            self.model = self.xgb.XGBClassifier(**self.model_params)
+        else:
+            self.model_params['objective'] = 'reg:squarederror'
+            self.model_params['eval_metric'] = 'rmse'
+            self.model = self.xgb.XGBRegressor(**self.model_params)
+        
+        # Prepare validation data
+        eval_set = None
+        if X_val is not None and y_val is not None:
+            eval_set = [(X_val.values, y_val.values.flatten())]
+        
+        # Fit model
+        self.model.fit(
+            X_train.values, 
+            y_train.values.flatten(),
+            eval_set=eval_set,
+            verbose=False
+        )
+        
+        self.is_fitted = True
+        return self
+    
+    def predict(self, X: pd.DataFrame) -> np.ndarray:
+        """Make predictions with XGBoost."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before prediction")
+        
+        return self.model.predict(X.values)
+    
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict probabilities with XGBoost (classification only)."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before prediction")
+        
+        if not hasattr(self.model, 'predict_proba'):
+            raise NotImplementedError("predict_proba only available for classification")
+            
+        return self.model.predict_proba(X.values)
+    
+    def save_model(self, filepath: str):
+        """Save XGBoost model."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before saving")
+        
+        # XGBoost has built-in save functionality
+        if filepath.endswith('.json'):
+            self.model.save_model(filepath)
+        else:
+            # Use pickle for compatibility
+            import pickle
+            model_data = {
+                'model': self.model,
+                'model_params': self.model_params
+            }
+            with open(filepath, 'wb') as f:
+                pickle.dump(model_data, f)
+    
+    def load_model(self, filepath: str):
+        """Load XGBoost model."""
+        if filepath.endswith('.json'):
+            # Load using XGBoost's native format
+            # Need to recreate model with correct type
+            if 'Classifier' in str(type(self.model)) or self.model_params.get('objective', '').startswith('binary') or self.model_params.get('objective', '').startswith('multi'):
+                self.model = self.xgb.XGBClassifier()
+            else:
+                self.model = self.xgb.XGBRegressor()
+            self.model.load_model(filepath)
+        else:
+            # Load using pickle
+            import pickle
+            with open(filepath, 'rb') as f:
+                model_data = pickle.load(f)
+            self.model = model_data['model']
+            self.model_params = model_data['model_params']
+        
+        self.is_fitted = True
+
+
+class LightGBMModel(BaseModel):
+    """
+    LightGBM model implementation for Friend-Or-Foe datasets.
+    """
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        import lightgbm as lgb
+        self.lgb = lgb
+        
+        # Set default parameters
+        default_params = {
+            'objective': 'binary',
+            'metric': 'binary_logloss',
+            'boosting_type': 'gbdt',
+            'num_leaves': 31,
+            'learning_rate': 0.1,
+            'feature_fraction': 0.9,
+            'bagging_fraction': 0.8,
+            'bagging_freq': 5,
+            'verbose': -1,
+            'random_state': 42
+        }
+        
+        for key, value in default_params.items():
+            if key not in self.model_params:
+                self.model_params[key] = value
+    
+    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame,
+            X_val: Optional[pd.DataFrame] = None,
+            y_val: Optional[pd.DataFrame] = None,
+            task_type: str = "classification") -> 'LightGBMModel':
+        """Fit LightGBM model."""
+        
+        # Prepare parameters based on task type
+        if task_type.lower() == "classification":
+            n_classes = len(np.unique(y_train.values.flatten()))
+            if n_classes == 2:
+                self.model_params['objective'] = 'binary'
+                self.model_params['metric'] = 'binary_logloss'
+            else:
+                self.model_params['objective'] = 'multiclass'
+                self.model_params['metric'] = 'multi_logloss'
+                self.model_params['num_class'] = n_classes
+            
+            self.model = self.lgb.LGBMClassifier(**self.model_params)
+        else:
+            self.model_params['objective'] = 'regression'
+            self.model_params['metric'] = 'rmse'
+            self.model = self.lgb.LGBMRegressor(**self.model_params)
+        
+        # Prepare validation data
+        eval_set = None
+        if X_val is not None and y_val is not None:
+            eval_set = [(X_val.values, y_val.values.flatten())]
+        
+        # Fit model
+        self.model.fit(
+            X_train.values,
+            y_train.values.flatten(),
+            eval_set=eval_set,
+            callbacks=[self.lgb.early_stopping(50), self.lgb.log_evaluation(0)]
+        )
+        
+        self.is_fitted = True
+        return self
+    
+    def predict(self, X: pd.DataFrame) -> np.ndarray:
+        """Make predictions with LightGBM."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before prediction")
+        
+        return self.model.predict(X.values)
+    
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict probabilities with LightGBM (classification only)."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before prediction")
+        
+        if not hasattr(self.model, 'predict_proba'):
+            raise NotImplementedError("predict_proba only available for classification")
+            
+        return self.model.predict_proba(X.values)
+    
+    def save_model(self, filepath: str):
+        """Save LightGBM model."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before saving")
+        
+        # LightGBM has built-in save functionality
+        if filepath.endswith('.txt'):
+            self.model.booster_.save_model(filepath)
+        else:
+            # Use pickle for compatibility
+            import pickle
+            model_data = {
+                'model': self.model,
+                'model_params': self.model_params
+            }
+            with open(filepath, 'wb') as f:
+                pickle.dump(model_data, f)
+    
+    def load_model(self, filepath: str):
+        """Load LightGBM model."""
+        if filepath.endswith('.txt'):
+            # Load using LightGBM's native format
+            if 'Classifier' in str(type(self.model)) or self.model_params.get('objective') in ['binary', 'multiclass']:
+                self.model = self.lgb.LGBMClassifier()
+            else:
+                self.model = self.lgb.LGBMRegressor()
+            self.model = self.lgb.Booster(model_file=filepath)
+        else:
+            # Load using pickle
+            import pickle
+            with open(filepath, 'rb') as f:
+                model_data = pickle.load(f)
+            self.model = model_data['model']
+            self.model_params = model_data['model_params']
+        
+        self.is_fitted = True
+
+
+class CatBoostModel(BaseModel):
+    """
+    CatBoost model implementation for Friend-Or-Foe datasets.
+    """
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        import catboost as cb
+        self.cb = cb
+        
+        # Set default parameters
+        default_params = {
+            'iterations': 100,
+            'learning_rate': 0.1,
+            'depth': 6,
+            'verbose': False,
+            'random_seed': 42
+        }
+        
+        for key, value in default_params.items():
+            if key not in self.model_params:
+                self.model_params[key] = value
+    
+    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame,
+            X_val: Optional[pd.DataFrame] = None,
+            y_val: Optional[pd.DataFrame] = None,
+            task_type: str = "classification") -> 'CatBoostModel':
+        """Fit CatBoost model."""
+        
+        if task_type.lower() == "classification":
+            self.model = self.cb.CatBoostClassifier(**self.model_params)
+        else:
+            self.model = self.cb.CatBoostRegressor(**self.model_params)
+        
+        # Prepare validation data
+        eval_set = None
+        if X_val is not None and y_val is not None:
+            eval_set = (X_val.values, y_val.values.flatten())
+        
+        # Fit model
+        self.model.fit(
+            X_train.values,
+            y_train.values.flatten(),
+            eval_set=eval_set,
+            use_best_model=True if eval_set is not None else False
+        )
+        
+        self.is_fitted = True
+        return self
+    
+    def predict(self, X: pd.DataFrame) -> np.ndarray:
+        """Make predictions with CatBoost."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before prediction")
+        
+        return self.model.predict(X.values)
+    
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict probabilities with CatBoost (classification only)."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before prediction")
+        
+        if not hasattr(self.model, 'predict_proba'):
+            raise NotImplementedError("predict_proba only available for classification")
+            
+        return self.model.predict_proba(X.values)
+    
+    def save_model(self, filepath: str):
+        """Save CatBoost model."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before saving")
+        
+        # CatBoost has built-in save functionality
+        self.model.save_model(filepath)
+    
+    def load_model(self, filepath: str):
+        """Load CatBoost model."""
+        # CatBoost requires us to know the model type beforehand
+        # Try to infer from filepath or use a default
+        try:
+            self.model = self.cb.CatBoostClassifier()
+            self.model.load_model(filepath)
+        except:
+            try:
+                self.model = self.cb.CatBoostRegressor()
+                self.model.load_model(filepath)
+            except Exception as e:
+                raise ValueError(f"Could not load CatBoost model: {e}")
+        
+        self.is_fitted = True
