@@ -42,6 +42,7 @@ dependencies = [
     "huggingface_hub>=0.20.0",
     "delu==0.0.26",
     "rtdl_revisiting_models==0.0.2",
+    "shap>=0.41.0",
 ]
 
 [project.optional-dependencies]
