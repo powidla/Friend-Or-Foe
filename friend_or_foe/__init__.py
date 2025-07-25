@@ -8,7 +8,7 @@ along with utilities and model implementations for predictive modeling of microb
 __version__ = "1.0.0"
 
 from .data.loader import FriendOrFoeDataLoader
-from .models.base import BaseModel
+from .model.base import BaseModel
 
 __all__ = [
     "FriendOrFoeDataLoader",
