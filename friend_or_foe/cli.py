@@ -25,8 +25,11 @@ Examples:
   # Download all datasets
   friend-or-foe download-all --output-dir ./FOFdata
   
-  # Run a quick experiment
+  # Run experiments with different models
   friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model tabnet
+  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model xgboost
+  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model lightgbm
+  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model catboost
   
   # Get dataset information
   friend-or-foe info --task Classification --collection AGORA --group 100 --dataset BC-I
@@ -60,13 +63,15 @@ Examples:
     info_parser.add_argument('--group', required=True, choices=['50', '100'])
     info_parser.add_argument('--dataset', required=True, help='Dataset identifier')
     
-    # Experiment command
+    # Experiment command with all models
     exp_parser = subparsers.add_parser('experiment', help='Run a quick experiment')
     exp_parser.add_argument('--task', required=True, choices=['Classification', 'Regression'])
     exp_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
     exp_parser.add_argument('--group', required=True, choices=['50', '100'])
     exp_parser.add_argument('--dataset', required=True, help='Dataset identifier')
-    exp_parser.add_argument('--model', default='tabnet', choices=['tabnet'], help='Model to use')
+    exp_parser.add_argument('--model', default='tabnet', 
+                           choices=['tabnet', 'xgboost', 'lightgbm', 'catboost'], 
+                           help='Model to use')
     exp_parser.add_argument('--output-file', help='Save results to JSON file')
     
     args = parser.parse_args()
