@@ -170,7 +170,7 @@ def handle_info(loader: FriendOrFoeDataLoader, args):
 
 
 def handle_experiment(loader: FriendOrFoeDataLoader, args):
-    """Handle experiment command."""
+    """Handle experiment command with all model types."""
     print(f"Running experiment with {args.model} on {args.task}/{args.collection}/{args.group}/{args.dataset}")
     
     # Load data
@@ -186,9 +186,15 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     
     print(f"Data loaded: {X_train.shape[0]} train, {X_test.shape[0]} test samples")
     
-    # Initialize model
+    # Initialize model based on selection
     if args.model == 'tabnet':
-        model = TabNetModel()
+        model = TabNetModel(n_d=32, n_a=32, n_steps=3)
+    elif args.model == 'xgboost':
+        model = XGBoostModel(n_estimators=200, max_depth=6, learning_rate=0.1)
+    elif args.model == 'lightgbm':
+        model = LightGBMModel(n_estimators=200, num_leaves=31, learning_rate=0.1)
+    elif args.model == 'catboost':
+        model = CatBoostModel(iterations=200, depth=6, learning_rate=0.1)
     else:
         raise ValueError(f"Unknown model: {args.model}")
     
@@ -206,6 +212,11 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     for metric, value in metrics.items():
         print(f"{metric}: {value:.4f}")
     
+    # Save model if requested
+    model_save_path = f"model_{args.model}_{args.task}_{args.collection}_{args.group}_{args.dataset}.pkl"
+    model.save_model(model_save_path)
+    print(f"Model saved to: {model_save_path}")
+    
     # Save results if requested
     if args.output_file:
         results = {
@@ -216,13 +227,13 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
                 'train_samples': X_train.shape[0],
                 'test_samples': X_test.shape[0],
                 'features': X_train.shape[1]
-            }
+            },
+            'model_path': model_save_path
         }
         
         with open(args.output_file, 'w') as f:
             json.dump(results, f, indent=2)
-        print(f"\nResults saved to: {args.output_file}")
-
+        print(f"Results saved to: {args.output_file}")
 
 if __name__ == '__main__':
     main()
