@@ -354,6 +354,98 @@ class XGBoostModel(BaseModel):
             self.model_params = model_data['model_params']
         
         self.is_fitted = True
+         def get_feature_importance(self, importance_type: str = "gain") -> pd.DataFrame:
+        """Get feature importance from XGBoost."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before getting feature importance")
+        
+        importance = self.model.feature_importances_
+        feature_names = [f"feature_{i}" for i in range(len(importance))]
+        
+        return pd.DataFrame({
+            'feature': feature_names,
+            'importance': importance
+        }).sort_values('importance', ascending=False)
+    
+    def shap_analysis(self, X_background: pd.DataFrame, X_explain: pd.DataFrame, 
+                     plot_type: str = "summary", max_display: int = 20, 
+                     save_path: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Perform SHAP analysis for XGBoost model.
+        
+        Args:
+            X_background: Background dataset for SHAP explainer
+            X_explain: Dataset to explain
+            plot_type: Type of SHAP plot ('summary', 'waterfall', 'force', 'dependence')
+            max_display: Maximum number of features to display
+            save_path: Path to save the plot
+            
+        Returns:
+            Dictionary containing SHAP values and explainer
+        """
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before SHAP analysis")
+        
+        try:
+            import shap
+            import matplotlib.pyplot as plt
+        except ImportError:
+            raise ImportError("SHAP and matplotlib are required for explainability analysis. Install with: pip install shap matplotlib")
+        
+        # Create SHAP explainer for XGBoost
+        explainer = shap.TreeExplainer(self.model)
+        
+        # Calculate SHAP values
+        print("Calculating SHAP values...")
+        shap_values = explainer.shap_values(X_explain.values)
+        
+        # Handle binary vs multiclass
+        if isinstance(shap_values, list) and len(shap_values) > 1:
+            # Multiclass - use the positive class for binary or first class for multiclass
+            shap_values_plot = shap_values[1] if len(shap_values) == 2 else shap_values[0]
+        else:
+            shap_values_plot = shap_values
+        
+        # Create plots based on type
+        if plot_type == "summary":
+            plt.figure(figsize=(10, 8))
+            shap.summary_plot(shap_values_plot, X_explain.values, 
+                            feature_names=X_explain.columns, 
+                            max_display=max_display, show=False)
+            if save_path:
+                plt.savefig(f"{save_path}_summary.png", dpi=300, bbox_inches='tight')
+            plt.show()
+            
+        elif plot_type == "waterfall":
+            if len(X_explain) > 0:
+                shap.waterfall_plot(explainer.expected_value, shap_values_plot[0], 
+                                  X_explain.iloc[0], feature_names=X_explain.columns,
+                                  max_display=max_display, show=False)
+                if save_path:
+                    plt.savefig(f"{save_path}_waterfall.png", dpi=300, bbox_inches='tight')
+                plt.show()
+                
+        elif plot_type == "force":
+            if len(X_explain) > 0:
+                shap.force_plot(explainer.expected_value, shap_values_plot[0], 
+                              X_explain.iloc[0], feature_names=X_explain.columns,
+                              matplotlib=True, show=False)
+                if save_path:
+                    plt.savefig(f"{save_path}_force.png", dpi=300, bbox_inches='tight')
+                plt.show()
+        
+        # Calculate feature importance from SHAP values
+        feature_importance = pd.DataFrame({
+            'feature': X_explain.columns,
+            'shap_importance': np.abs(shap_values_plot).mean(0)
+        }).sort_values('shap_importance', ascending=False)
+        
+        return {
+            'explainer': explainer,
+            'shap_values': shap_values,
+            'feature_importance': feature_importance,
+            'expected_value': explainer.expected_value
+        }
 
 
 class LightGBMModel(BaseModel):
@@ -476,6 +568,99 @@ class LightGBMModel(BaseModel):
             self.model_params = model_data['model_params']
         
         self.is_fitted = True
+           def get_feature_importance(self, importance_type: str = "split") -> pd.DataFrame:
+        """Get feature importance from LightGBM."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before getting feature importance")
+        
+        importance = self.model.feature_importances_
+        feature_names = [f"feature_{i}" for i in range(len(importance))]
+        
+        return pd.DataFrame({
+            'feature': feature_names,
+            'importance': importance
+        }).sort_values('importance', ascending=False)
+    
+    def shap_analysis(self, X_background: pd.DataFrame, X_explain: pd.DataFrame, 
+                     plot_type: str = "summary", max_display: int = 20, 
+                     save_path: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Perform SHAP analysis for LightGBM model.
+        
+        Args:
+            X_background: Background dataset for SHAP explainer
+            X_explain: Dataset to explain
+            plot_type: Type of SHAP plot ('summary', 'waterfall', 'force', 'dependence')
+            max_display: Maximum number of features to display
+            save_path: Path to save the plot
+            
+        Returns:
+            Dictionary containing SHAP values and explainer
+        """
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before SHAP analysis")
+        
+        try:
+            import shap
+            import matplotlib.pyplot as plt
+        except ImportError:
+            raise ImportError("SHAP and matplotlib are required for explainability analysis. Install with: pip install shap matplotlib")
+        
+        # Create SHAP explainer for LightGBM
+        explainer = shap.TreeExplainer(self.model)
+        
+        # Calculate SHAP values
+        print("Calculating SHAP values...")
+        shap_values = explainer.shap_values(X_explain.values)
+        
+        # Handle binary vs multiclass
+        if isinstance(shap_values, list) and len(shap_values) > 1:
+            # Multiclass - use the positive class for binary or first class for multiclass
+            shap_values_plot = shap_values[1] if len(shap_values) == 2 else shap_values[0]
+        else:
+            shap_values_plot = shap_values
+        
+        # Create plots based on type
+        if plot_type == "summary":
+            plt.figure(figsize=(10, 8))
+            shap.summary_plot(shap_values_plot, X_explain.values, 
+                            feature_names=X_explain.columns, 
+                            max_display=max_display, show=False)
+            if save_path:
+                plt.savefig(f"{save_path}_summary.png", dpi=300, bbox_inches='tight')
+            plt.show()
+            
+        elif plot_type == "waterfall":
+            if len(X_explain) > 0:
+                shap.waterfall_plot(explainer.expected_value, shap_values_plot[0], 
+                                  X_explain.iloc[0], feature_names=X_explain.columns,
+                                  max_display=max_display, show=False)
+                if save_path:
+                    plt.savefig(f"{save_path}_waterfall.png", dpi=300, bbox_inches='tight')
+                plt.show()
+                
+        elif plot_type == "force":
+            if len(X_explain) > 0:
+                shap.force_plot(explainer.expected_value, shap_values_plot[0], 
+                              X_explain.iloc[0], feature_names=X_explain.columns,
+                              matplotlib=True, show=False)
+                if save_path:
+                    plt.savefig(f"{save_path}_force.png", dpi=300, bbox_inches='tight')
+                plt.show()
+        
+        # Calculate feature importance from SHAP values
+        feature_importance = pd.DataFrame({
+            'feature': X_explain.columns,
+            'shap_importance': np.abs(shap_values_plot).mean(0)
+        }).sort_values('shap_importance', ascending=False)
+        
+        return {
+            'explainer': explainer,
+            'shap_values': shap_values,
+            'feature_importance': feature_importance,
+            'expected_value': explainer.expected_value
+        }
+
 
 
 class CatBoostModel(BaseModel):
@@ -568,3 +753,95 @@ class CatBoostModel(BaseModel):
                 raise ValueError(f"Could not load CatBoost model: {e}")
         
         self.is_fitted = True
+        def get_feature_importance(self) -> pd.DataFrame:
+        """Get feature importance from CatBoost."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before getting feature importance")
+        
+        importance = self.model.feature_importances_
+        feature_names = [f"feature_{i}" for i in range(len(importance))]
+        
+        return pd.DataFrame({
+            'feature': feature_names,
+            'importance': importance
+        }).sort_values('importance', ascending=False)
+    
+    def shap_analysis(self, X_background: pd.DataFrame, X_explain: pd.DataFrame, 
+                     plot_type: str = "summary", max_display: int = 20, 
+                     save_path: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Perform SHAP analysis for CatBoost model.
+        
+        Args:
+            X_background: Background dataset for SHAP explainer
+            X_explain: Dataset to explain
+            plot_type: Type of SHAP plot ('summary', 'waterfall', 'force', 'dependence')
+            max_display: Maximum number of features to display
+            save_path: Path to save the plot
+            
+        Returns:
+            Dictionary containing SHAP values and explainer
+        """
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before SHAP analysis")
+        
+        try:
+            import shap
+            import matplotlib.pyplot as plt
+        except ImportError:
+            raise ImportError("SHAP and matplotlib are required for explainability analysis. Install with: pip install shap matplotlib")
+        
+        # Create SHAP explainer for CatBoost
+        explainer = shap.TreeExplainer(self.model)
+        
+        # Calculate SHAP values
+        print("Calculating SHAP values...")
+        shap_values = explainer.shap_values(X_explain.values)
+        
+        # Handle binary vs multiclass
+        if isinstance(shap_values, list) and len(shap_values) > 1:
+            # Multiclass - use the positive class for binary or first class for multiclass
+            shap_values_plot = shap_values[1] if len(shap_values) == 2 else shap_values[0]
+        else:
+            shap_values_plot = shap_values
+        
+        # Create plots based on type
+        if plot_type == "summary":
+            plt.figure(figsize=(10, 8))
+            shap.summary_plot(shap_values_plot, X_explain.values, 
+                            feature_names=X_explain.columns, 
+                            max_display=max_display, show=False)
+            if save_path:
+                plt.savefig(f"{save_path}_summary.png", dpi=300, bbox_inches='tight')
+            plt.show()
+            
+        elif plot_type == "waterfall":
+            if len(X_explain) > 0:
+                shap.waterfall_plot(explainer.expected_value, shap_values_plot[0], 
+                                  X_explain.iloc[0], feature_names=X_explain.columns,
+                                  max_display=max_display, show=False)
+                if save_path:
+                    plt.savefig(f"{save_path}_waterfall.png", dpi=300, bbox_inches='tight')
+                plt.show()
+                
+        elif plot_type == "force":
+            if len(X_explain) > 0:
+                shap.force_plot(explainer.expected_value, shap_values_plot[0], 
+                              X_explain.iloc[0], feature_names=X_explain.columns,
+                              matplotlib=True, show=False)
+                if save_path:
+                    plt.savefig(f"{save_path}_force.png", dpi=300, bbox_inches='tight')
+                plt.show()
+        
+        # Calculate feature importance from SHAP values
+        feature_importance = pd.DataFrame({
+            'feature': X_explain.columns,
+            'shap_importance': np.abs(shap_values_plot).mean(0)
+        }).sort_values('shap_importance', ascending=False)
+        
+        return {
+            'explainer': explainer,
+            'shap_values': shap_values,
+            'feature_importance': feature_importance,
+            'expected_value': explainer.expected_value
+        }
