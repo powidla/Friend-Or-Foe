@@ -354,7 +354,7 @@ class XGBoostModel(BaseModel):
             self.model_params = model_data['model_params']
         
         self.is_fitted = True
-         def get_feature_importance(self, importance_type: str = "gain") -> pd.DataFrame:
+    def get_feature_importance(self, importance_type: str = "gain") -> pd.DataFrame:
         """Get feature importance from XGBoost."""
         if not self.is_fitted:
             raise ValueError("Model must be fitted before getting feature importance")
@@ -568,7 +568,7 @@ class LightGBMModel(BaseModel):
             self.model_params = model_data['model_params']
         
         self.is_fitted = True
-           def get_feature_importance(self, importance_type: str = "split") -> pd.DataFrame:
+    def get_feature_importance(self, importance_type: str = "split") -> pd.DataFrame:
         """Get feature importance from LightGBM."""
         if not self.is_fitted:
             raise ValueError("Model must be fitted before getting feature importance")
@@ -753,7 +753,7 @@ class CatBoostModel(BaseModel):
                 raise ValueError(f"Could not load CatBoost model: {e}")
         
         self.is_fitted = True
-        def get_feature_importance(self) -> pd.DataFrame:
+    def get_feature_importance(self) -> pd.DataFrame:
         """Get feature importance from CatBoost."""
         if not self.is_fitted:
             raise ValueError("Model must be fitted before getting feature importance")
