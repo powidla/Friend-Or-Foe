@@ -3,7 +3,7 @@ import argparse
 import sys
 from pathlib import Path
 import json
-from typing import Dict, Any
+import pandas as pd
 
 from .data.loader import FriendOrFoeDataLoader
 from .model.base import TabNetModel, XGBoostModel, LightGBMModel, CatBoostModel
@@ -26,10 +26,13 @@ Examples:
   friend-or-foe download-all --output-dir ./FOFdata
   
   # Run experiments with different models
-  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model tabnet
   friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model xgboost
   friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model lightgbm
   friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model catboost
+  
+  # Perform SHAP analysis on trained models
+  friend-or-foe shap --model-path ./model_xgboost.pkl --model-type xgboost --task Classification --collection AGORA --group 100 --dataset BC-I
+  friend-or-foe shap --model-path ./model_lightgbm.pkl --model-type lightgbm --task Classification --collection AGORA --group 100 --dataset BC-I --plot-type waterfall
   
   # Get dataset information
   friend-or-foe info --task Classification --collection AGORA --group 100 --dataset BC-I
@@ -63,13 +66,32 @@ Examples:
     info_parser.add_argument('--group', required=True, choices=['50', '100'])
     info_parser.add_argument('--dataset', required=True, help='Dataset identifier')
     
+    # SHAP analysis command
+    shap_parser = subparsers.add_parser('shap', help='Perform SHAP analysis on a trained model')
+    shap_parser.add_argument('--model-path', required=True, help='Path to saved model file')
+    shap_parser.add_argument('--model-type', required=True, 
+                           choices=['xgboost', 'lightgbm', 'catboost'], 
+                           help='Type of model')
+    shap_parser.add_argument('--task', required=True, choices=['Classification', 'Regression'])
+    shap_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
+    shap_parser.add_argument('--group', required=True, choices=['50', '100'])
+    shap_parser.add_argument('--dataset', required=True, help='Dataset identifier')
+    shap_parser.add_argument('--plot-type', default='summary', 
+                           choices=['summary', 'waterfall', 'force'], 
+                           help='Type of SHAP plot to generate')
+    shap_parser.add_argument('--max-display', type=int, default=20, 
+                           help='Maximum number of features to display')
+    shap_parser.add_argument('--save-path', help='Path to save SHAP plots')
+    shap_parser.add_argument('--sample-size', type=int, default=100, 
+                           help='Number of samples to use for SHAP analysis')
+    
     # Experiment command with all models
     exp_parser = subparsers.add_parser('experiment', help='Run a quick experiment')
     exp_parser.add_argument('--task', required=True, choices=['Classification', 'Regression'])
     exp_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
     exp_parser.add_argument('--group', required=True, choices=['50', '100'])
     exp_parser.add_argument('--dataset', required=True, help='Dataset identifier')
-    exp_parser.add_argument('--model', default='tabnet', 
+    exp_parser.add_argument('--model', default='xgboost', 
                            choices=['tabnet', 'xgboost', 'lightgbm', 'catboost'], 
                            help='Model to use')
     exp_parser.add_argument('--output-file', help='Save results to JSON file')
@@ -94,6 +116,8 @@ Examples:
             handle_info(loader, args)
         elif args.command == 'experiment':
             handle_experiment(loader, args)
+        elif args.command == 'shap':
+            handle_shap_analysis(loader, args)
         else:
             parser.print_help()
             
@@ -239,6 +263,130 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
         with open(args.output_file, 'w') as f:
             json.dump(results, f, indent=2)
         print(f"Results saved to: {args.output_file}")
+
+
+def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
+    """Handle SHAP analysis command."""
+    print(f"🔍 Performing SHAP analysis on {args.model_type} model")
+    print(f"Model path: {args.model_path}")
+    
+    # Check if model file exists
+    if not Path(args.model_path).exists():
+        print(f"❌ Error: Model file not found: {args.model_path}")
+        sys.exit(1)
+    
+    # Load the dataset
+    print("📊 Loading dataset...")
+    data = loader.load_dataset(args.task, args.collection, args.group, args.dataset)
+    
+    # Combine train and validation data for background
+    X_background = pd.concat([data['X_train'], data['X_val']], ignore_index=True)
+    
+    # Use test data for explanation (sample if too large)
+    X_explain = data['X_test']
+    if len(X_explain) > args.sample_size:
+        X_explain = X_explain.sample(n=args.sample_size, random_state=42)
+    
+    print(f"Background data: {X_background.shape}")
+    print(f"Explanation data: {X_explain.shape}")
+    
+    # Initialize and load the model
+    print("Loading trained model...")
+    if args.model_type == 'xgboost':
+        model = XGBoostModel()
+    elif args.model_type == 'lightgbm':
+        model = LightGBMModel()
+    elif args.model_type == 'catboost':
+        model = CatBoostModel()
+    else:
+        raise ValueError(f"Unsupported model type: {args.model_type}")
+    
+    # Load the trained model
+    try:
+        model.load_model(args.model_path)
+        print("Model loaded successfully")
+    except Exception as e:
+        print(f"Error loading model: {e}")
+        sys.exit(1)
+    
+    # Perform SHAP analysis
+    print("Casting SHAP analysis...")
+    try:
+        shap_results = model.shap_analysis(
+            X_background=X_background,
+            X_explain=X_explain,
+            plot_type=args.plot_type,
+            max_display=args.max_display,
+            save_path=args.save_path
+        )
+        
+        print("SHAP analysis completed successfully!")
+        
+    except ImportError:
+        print("Error: SHAP library not found. Please install with: pip install shap")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error during SHAP analysis: {e}")
+        sys.exit(1)
+    
+    # Display feature importance results
+    print(f"\n Top {min(10, len(shap_results['feature_importance']))} Most Important Features (by SHAP):")
+    print("-" * 60)
+    top_features = shap_results['feature_importance'].head(10)
+    for idx, row in top_features.iterrows():
+        print(f"{idx+1:2d}. {row['feature']:<25} | Importance: {row['shap_importance']:.6f}")
+    
+    # Compare with native feature importance if available
+    try:
+        native_importance = model.get_feature_importance()
+        print(f"\n📋 Top 10 Most Important Features (Native Model Importance):")
+        print("-" * 60)
+        top_native = native_importance.head(10)
+        for idx, row in top_native.iterrows():
+            print(f"{idx+1:2d}. {row['feature']:<25} | Importance: {row['importance']:.6f}")
+    except Exception as e:
+        print(f"⚠️ Could not get native feature importance: {e}")
+    
+    # Save results if save path is provided
+    if args.save_path:
+        print(f"\n💾 Saving results...")
+        
+        # Save SHAP feature importance
+        shap_importance_file = f"{args.save_path}_shap_importance.csv"
+        shap_results['feature_importance'].to_csv(shap_importance_file, index=False)
+        print(f"SHAP importance saved to: {shap_importance_file}")
+        
+        # Save native feature importance
+        try:
+            native_importance = model.get_feature_importance()
+            native_importance_file = f"{args.save_path}_native_importance.csv"
+            native_importance.to_csv(native_importance_file, index=False)
+            print(f"Native importance saved to: {native_importance_file}")
+        except:
+            pass
+        
+        # Save analysis metadata
+        metadata = {
+            'model_type': args.model_type,
+            'model_path': args.model_path,
+            'dataset': f"{args.task}/{args.collection}/{args.group}/{args.dataset}",
+            'plot_type': args.plot_type,
+            'max_display': args.max_display,
+            'sample_size': args.sample_size,
+            'background_samples': len(X_background),
+            'explanation_samples': len(X_explain),
+            'expected_value': float(shap_results['expected_value']) if hasattr(shap_results['expected_value'], '__float__') else str(shap_results['expected_value'])
+        }
+        
+        metadata_file = f"{args.save_path}_metadata.json"
+        with open(metadata_file, 'w') as f:
+            json.dump(metadata, f, indent=2)
+        print(f"Analysis metadata saved to: {metadata_file}")
+    
+    print(f"\n SHAP analysis completed for {args.model_type} model!")
+    if args.save_path:
+        print(f"All results saved with prefix: {args.save_path}")
+
 
 if __name__ == '__main__':
     main()
