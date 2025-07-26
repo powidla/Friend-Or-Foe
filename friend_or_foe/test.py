@@ -445,7 +445,7 @@ def run_all_tests() -> bool:
         print_success("All tests passed!")
         return True
     else:
-        print_error(f"❌ {total - passed} tests failed. Please check the errors above.")
+        print_error(f"{total - passed} tests failed. Please check the errors above.")
         return False
 
 
