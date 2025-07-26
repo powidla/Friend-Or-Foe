@@ -855,13 +855,19 @@ class CatBoostModel(BaseModel):
 class FTTransformerModel(BaseModel):
     """
     FT-Transformer model implementation using rtdl_revisiting_models package.
+    Uses default parameters only, following the standard usage pattern.
     """
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
-        # Set default parameters based on rtdl_revisiting_models
+        # Only allow basic training parameters, not model architecture parameters
         default_params = {
+            'max_epochs': 100,
+            'patience': 16,
+            'batch_size': 256,
+            'eval_batch_size': 4096,
+            'random_state': 42
         }
         
         for key, value in default_params.items():
@@ -872,7 +878,7 @@ class FTTransformerModel(BaseModel):
             X_val: Optional[pd.DataFrame] = None,
             y_val: Optional[pd.DataFrame] = None,
             task_type: str = "classification") -> 'FTTransformerModel':
-        """Fit FT-Transformer model using rtdl_revisiting_models."""
+        """Fit FT-Transformer model using rtdl_revisiting_models with default parameters."""
         
         try:
             import torch
@@ -952,16 +958,16 @@ class FTTransformerModel(BaseModel):
         if X_val_tensor is not None:
             data['val'] = {'x_cont': X_val_tensor, 'y': y_val_tensor}
         
-        # Create model
-        print("Creating FT-Transformer model...")
+        # Create model with default parameters only
+        print("Creating FT-Transformer model with default parameters...")
         self.model = FTTransformer(
             n_cont_features=X_train.shape[1],
             cat_cardinalities=[],  # No categorical features for Friend-Or-Foe data
-            d_out=d_out, 
-            **FTTransformer.get_default_kwargs()
+            d_out=d_out,
+            **FTTransformer.get_default_kwargs(),
         ).to(device)
         
-        # Setup optimizer
+        # Setup optimizer using model's default optimizer
         optimizer = self.model.make_default_optimizer()
         
         # Define loss function
@@ -1081,13 +1087,19 @@ class FTTransformerModel(BaseModel):
         self.is_fitted = True
         self.device = device
         self.preprocessing = preprocessing
+        self.n_cont_features = X_train.shape[1]
+        self.d_out = d_out
         return self
     
     def predict(self, X: pd.DataFrame) -> np.ndarray:
         """Make predictions with FT-Transformer."""
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
-    
+        
+        import torch
+        import delu
+        import numpy as np
+        import scipy.special
         
         # Preprocess features
         X_processed = self.preprocessing.transform(X.values.astype(np.float32))
@@ -1162,6 +1174,8 @@ class FTTransformerModel(BaseModel):
             'task_type': self.task_type,
             'preprocessing': self.preprocessing,
             'device': str(self.device),
+            'n_cont_features': self.n_cont_features,
+            'd_out': self.d_out,
         }
         
         # Add regression-specific attributes
@@ -1183,28 +1197,19 @@ class FTTransformerModel(BaseModel):
         self.task_type = model_data['task_type']
         self.preprocessing = model_data['preprocessing']
         self.device = torch.device(model_data['device'])
+        self.n_cont_features = model_data['n_cont_features']
+        self.d_out = model_data['d_out']
         
         if self.task_type == "regression":
             self.Y_mean = model_data['Y_mean']
             self.Y_std = model_data['Y_std']
         
-        # Recreate model architecture
-        if self.task_type == "binclass":
-            d_out = 1
-        elif self.task_type == "multiclass":
-            # This would need to be stored or inferred
-            d_out = 2  # Default, should be stored properly
-        else:
-            d_out = 1
-        
-        # Get number of features from preprocessing
-        n_features = self.preprocessing.n_features_in_
-        
+        # Recreate model with default parameters
         self.model = FTTransformer(
-            n_cont_features=n_features,
+            n_cont_features=self.n_cont_features,
             cat_cardinalities=[],
-            d_out=d_out,
-            **FTTransformer.get_default_kwargs()
+            d_out=self.d_out,
+            **FTTransformer.get_default_kwargs(),
         ).to(self.device)
         
         self.model.load_state_dict(model_data['model_state_dict'])
