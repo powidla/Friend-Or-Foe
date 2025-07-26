@@ -581,7 +581,7 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
 
 def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
     """Handle SHAP analysis command."""
-    print(f"🔍 Performing SHAP analysis on {args.model_type} model")
+    print(f"Performing SHAP analysis on {args.model_type} model")
     print(f"Model path: {args.model_path}")
     
     # Check if model file exists
