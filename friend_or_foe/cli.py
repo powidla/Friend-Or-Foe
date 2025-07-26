@@ -1,4 +1,9 @@
-# friend_or_foe/cli.py
+"""
+CLI Friend-Or-Foe.
+Currently supports training from base.py and change different parameters.
+Additionally, cli.py supports SHAP.
+"""
+
 import argparse
 import sys
 from pathlib import Path
@@ -6,7 +11,7 @@ import json
 import pandas as pd
 
 from .data.loader import FriendOrFoeDataLoader
-from .model.base import TabNetModel, XGBoostModel, LightGBMModel, CatBoostModel
+from .models.base import TabNetModel, XGBoostModel, LightGBMModel, CatBoostModel
 
 
 def main():
@@ -25,10 +30,17 @@ Examples:
   # Download all datasets
   friend-or-foe download-all --output-dir ./FOFdata
   
-  # Run experiments with different models
-  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model xgboost
-  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model lightgbm
-  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model catboost
+  # Run experiments with custom parameters
+  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model xgboost --xgb-n-estimators 500 --xgb-learning-rate 0.05
+  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model lightgbm --lgb-num-leaves 50 --lgb-learning-rate 0.08
+  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model catboost --cb-iterations 300 --cb-depth 8
+  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model tabnet --tabnet-n-d 64 --tabnet-n-steps 5
+  
+  # Use custom parameters from JSON file
+  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model xgboost --params ./xgb_params.json
+  
+  # Use custom parameters from JSON string
+  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model xgboost --params '{"n_estimators": 300, "max_depth": 8}'
   
   # Perform SHAP analysis on trained models
   friend-or-foe shap --model-path ./model_xgboost.pkl --model-type xgboost --task Classification --collection AGORA --group 100 --dataset BC-I
@@ -85,7 +97,7 @@ Examples:
     shap_parser.add_argument('--sample-size', type=int, default=100, 
                            help='Number of samples to use for SHAP analysis')
     
-    # Experiment command with all models
+    # Experiment command with all models and custom parameters
     exp_parser = subparsers.add_parser('experiment', help='Run a quick experiment')
     exp_parser.add_argument('--task', required=True, choices=['Classification', 'Regression'])
     exp_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
@@ -95,6 +107,42 @@ Examples:
                            choices=['tabnet', 'xgboost', 'lightgbm', 'catboost'], 
                            help='Model to use')
     exp_parser.add_argument('--output-file', help='Save results to JSON file')
+    exp_parser.add_argument('--params', help='JSON string or file path with custom model parameters')
+    
+    # Common parameters for all models
+    exp_parser.add_argument('--random-state', type=int, default=42, help='Random state for reproducibility')
+    exp_parser.add_argument('--verbose', action='store_true', help='Enable verbose training output')
+    
+    # XGBoost specific parameters
+    exp_parser.add_argument('--xgb-n-estimators', type=int, help='XGBoost: Number of estimators')
+    exp_parser.add_argument('--xgb-max-depth', type=int, help='XGBoost: Maximum tree depth')
+    exp_parser.add_argument('--xgb-learning-rate', type=float, help='XGBoost: Learning rate')
+    exp_parser.add_argument('--xgb-subsample', type=float, help='XGBoost: Subsample ratio')
+    exp_parser.add_argument('--xgb-colsample-bytree', type=float, help='XGBoost: Column subsample ratio')
+    
+    # LightGBM specific parameters
+    exp_parser.add_argument('--lgb-n-estimators', type=int, help='LightGBM: Number of estimators')
+    exp_parser.add_argument('--lgb-num-leaves', type=int, help='LightGBM: Number of leaves')
+    exp_parser.add_argument('--lgb-learning-rate', type=float, help='LightGBM: Learning rate')
+    exp_parser.add_argument('--lgb-feature-fraction', type=float, help='LightGBM: Feature fraction')
+    exp_parser.add_argument('--lgb-bagging-fraction', type=float, help='LightGBM: Bagging fraction')
+    exp_parser.add_argument('--lgb-min-child-samples', type=int, help='LightGBM: Min child samples')
+    
+    # CatBoost specific parameters
+    exp_parser.add_argument('--cb-iterations', type=int, help='CatBoost: Number of iterations')
+    exp_parser.add_argument('--cb-depth', type=int, help='CatBoost: Tree depth')
+    exp_parser.add_argument('--cb-learning-rate', type=float, help='CatBoost: Learning rate')
+    exp_parser.add_argument('--cb-l2-leaf-reg', type=float, help='CatBoost: L2 regularization')
+    
+    # TabNet specific parameters
+    exp_parser.add_argument('--tabnet-n-d', type=int, help='TabNet: Width of decision prediction layer')
+    exp_parser.add_argument('--tabnet-n-a', type=int, help='TabNet: Width of attention embedding')
+    exp_parser.add_argument('--tabnet-n-steps', type=int, help='TabNet: Number of steps in architecture')
+    exp_parser.add_argument('--tabnet-gamma', type=float, help='TabNet: Coefficient for feature reusage')
+    exp_parser.add_argument('--tabnet-lambda-sparse', type=float, help='TabNet: Sparsity regularization')
+    exp_parser.add_argument('--tabnet-lr', type=float, help='TabNet: Learning rate')
+    exp_parser.add_argument('--tabnet-max-epochs', type=int, help='TabNet: Maximum training epochs')
+    exp_parser.add_argument('--tabnet-patience', type=int, help='TabNet: Early stopping patience')
     
     args = parser.parse_args()
     
@@ -198,9 +246,145 @@ def handle_info(loader: FriendOrFoeDataLoader, args):
         print(f"  ... and {len(info['feature_names']) - 10} more features")
 
 
+def parse_model_parameters(args):
+    """Parse model-specific parameters from CLI arguments."""
+    import json
+    
+    # Start with custom params from JSON if provided
+    custom_params = {}
+    if args.params:
+        try:
+            if Path(args.params).exists():
+                # Load from file
+                with open(args.params, 'r') as f:
+                    custom_params = json.load(f)
+            else:
+                # Parse as JSON string
+                custom_params = json.loads(args.params)
+        except (json.JSONDecodeError, FileNotFoundError) as e:
+            print(f"Warning: Could not parse custom parameters: {e}")
+    
+    # Add common parameters
+    if args.random_state is not None:
+        custom_params['random_state'] = args.random_state
+    
+    # Model-specific parameters (CLI args override JSON params)
+    if args.model == 'xgboost':
+        xgb_params = {}
+        if args.xgb_n_estimators is not None:
+            xgb_params['n_estimators'] = args.xgb_n_estimators
+        if args.xgb_max_depth is not None:
+            xgb_params['max_depth'] = args.xgb_max_depth
+        if args.xgb_learning_rate is not None:
+            xgb_params['learning_rate'] = args.xgb_learning_rate
+        if args.xgb_subsample is not None:
+            xgb_params['subsample'] = args.xgb_subsample
+        if args.xgb_colsample_bytree is not None:
+            xgb_params['colsample_bytree'] = args.xgb_colsample_bytree
+        
+        # Set defaults if not specified
+        default_xgb = {
+            'n_estimators': 200,
+            'max_depth': 6,
+            'learning_rate': 0.1,
+            'random_state': args.random_state
+        }
+        for key, value in default_xgb.items():
+            if key not in custom_params and key not in xgb_params:
+                xgb_params[key] = value
+        
+        custom_params.update(xgb_params)
+    
+    elif args.model == 'lightgbm':
+        lgb_params = {}
+        if args.lgb_n_estimators is not None:
+            lgb_params['n_estimators'] = args.lgb_n_estimators
+        if args.lgb_num_leaves is not None:
+            lgb_params['num_leaves'] = args.lgb_num_leaves
+        if args.lgb_learning_rate is not None:
+            lgb_params['learning_rate'] = args.lgb_learning_rate
+        if args.lgb_feature_fraction is not None:
+            lgb_params['feature_fraction'] = args.lgb_feature_fraction
+        if args.lgb_bagging_fraction is not None:
+            lgb_params['bagging_fraction'] = args.lgb_bagging_fraction
+        if args.lgb_min_child_samples is not None:
+            lgb_params['min_child_samples'] = args.lgb_min_child_samples
+        
+        # Set defaults
+        default_lgb = {
+            'n_estimators': 200,
+            'num_leaves': 31,
+            'learning_rate': 0.1,
+            'random_state': args.random_state,
+            'verbose': -1
+        }
+        for key, value in default_lgb.items():
+            if key not in custom_params and key not in lgb_params:
+                lgb_params[key] = value
+        
+        custom_params.update(lgb_params)
+    
+    elif args.model == 'catboost':
+        cb_params = {}
+        if args.cb_iterations is not None:
+            cb_params['iterations'] = args.cb_iterations
+        if args.cb_depth is not None:
+            cb_params['depth'] = args.cb_depth
+        if args.cb_learning_rate is not None:
+            cb_params['learning_rate'] = args.cb_learning_rate
+        if args.cb_l2_leaf_reg is not None:
+            cb_params['l2_leaf_reg'] = args.cb_l2_leaf_reg
+        
+        # Set defaults
+        default_cb = {
+            'iterations': 200,
+            'depth': 6,
+            'learning_rate': 0.1,
+            'random_seed': args.random_state,
+            'verbose': args.verbose
+        }
+        for key, value in default_cb.items():
+            if key not in custom_params and key not in cb_params:
+                cb_params[key] = value
+        
+        custom_params.update(cb_params)
+    
+    elif args.model == 'tabnet':
+        tabnet_params = {}
+        if args.tabnet_n_d is not None:
+            tabnet_params['n_d'] = args.tabnet_n_d
+        if args.tabnet_n_a is not None:
+            tabnet_params['n_a'] = args.tabnet_n_a
+        if args.tabnet_n_steps is not None:
+            tabnet_params['n_steps'] = args.tabnet_n_steps
+        if args.tabnet_gamma is not None:
+            tabnet_params['gamma'] = args.tabnet_gamma
+        if args.tabnet_lambda_sparse is not None:
+            tabnet_params['lambda_sparse'] = args.tabnet_lambda_sparse
+        
+        # Set defaults
+        default_tabnet = {
+            'n_d': 32,
+            'n_a': 32, 
+            'n_steps': 3,
+            'seed': args.random_state
+        }
+        for key, value in default_tabnet.items():
+            if key not in custom_params and key not in tabnet_params:
+                tabnet_params[key] = value
+        
+        custom_params.update(tabnet_params)
+    
+    return custom_params
+
+
 def handle_experiment(loader: FriendOrFoeDataLoader, args):
-    """Handle experiment command with all model types."""
+    """Handle experiment command with custom model parameters."""
     print(f"Running experiment with {args.model} on {args.task}/{args.collection}/{args.group}/{args.dataset}")
+    
+    # Parse model parameters
+    model_params = parse_model_parameters(args)
+    print(f"Model parameters: {model_params}")
     
     # Load data
     print("Loading dataset...")
@@ -215,33 +399,66 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     
     print(f"Data loaded: {X_train.shape[0]} train, {X_test.shape[0]} test samples")
     
-    # Initialize model based on selection
+    # Initialize model with custom parameters
+    print(f"Initializing {args.model} model...")
     if args.model == 'tabnet':
-        model = TabNetModel(n_d=32, n_a=32, n_steps=3)
+        model = TabNetModel(**model_params)
     elif args.model == 'xgboost':
-        model = XGBoostModel(n_estimators=200, max_depth=6, learning_rate=0.1)
+        model = XGBoostModel(**model_params)
     elif args.model == 'lightgbm':
-        model = LightGBMModel(n_estimators=200, num_leaves=31, learning_rate=0.1)
+        model = LightGBMModel(**model_params)
     elif args.model == 'catboost':
-        model = CatBoostModel(iterations=200, depth=6, learning_rate=0.1)
+        model = CatBoostModel(**model_params)
     else:
         raise ValueError(f"Unknown model: {args.model}")
     
+    # Handle TabNet specific training parameters
+    fit_params = {}
+    if args.model == 'tabnet':
+        if args.tabnet_max_epochs is not None:
+            fit_params['max_epochs'] = args.tabnet_max_epochs
+        if args.tabnet_patience is not None:
+            fit_params['patience'] = args.tabnet_patience
+        if args.tabnet_lr is not None:
+            fit_params['lr'] = args.tabnet_lr
+    
     # Train model
     print("Training model...")
-    model.fit(X_train, y_train, X_val, y_val, task_type=args.task.lower())
+    import time
+    start_time = time.time()
+    
+    if args.model == 'tabnet' and fit_params:
+        # For TabNet, we need to pass training params differently
+        model.fit(X_train, y_train, X_val, y_val, task_type=args.task.lower(), **fit_params)
+    else:
+        model.fit(X_train, y_train, X_val, y_val, task_type=args.task.lower())
+    
+    training_time = time.time() - start_time
+    print(f"Training completed in {training_time:.2f} seconds")
     
     # Evaluate model
     print("Evaluating model...")
     metrics = model.evaluate(X_test, y_test, task_type=args.task.lower())
     
     # Display results
-    print("\nResults:")
-    print("-" * 20)
+    print(f"\n Results:")
+    print("-" * 40)
     for metric, value in metrics.items():
-        print(f"{metric}: {value:.4f}")
+        print(f"{metric:>15}: {value:.6f}")
+    print(f"{'training_time':>15}: {training_time:.2f}s")
     
-    # Save model if requested
+    # Show feature importance if available
+    try:
+        if hasattr(model, 'get_feature_importance'):
+            importance = model.get_feature_importance()
+            print(f"\n Top 5 Most Important Features:")
+            print("-" * 30)
+            for idx, row in importance.head(5).iterrows():
+                print(f"{row['feature']:>20}: {row['importance']:.6f}")
+    except Exception as e:
+        print(f"Could not get feature importance: {e}")
+    
+    # Save model
     model_save_path = f"model_{args.model}_{args.task}_{args.collection}_{args.group}_{args.dataset}.pkl"
     model.save_model(model_save_path)
     print(f"Model saved to: {model_save_path}")
@@ -251,9 +468,12 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
         results = {
             'dataset': f"{args.task}/{args.collection}/{args.group}/{args.dataset}",
             'model': args.model,
+            'model_parameters': model_params,
             'metrics': metrics,
+            'training_time': training_time,
             'data_info': {
                 'train_samples': X_train.shape[0],
+                'validation_samples': X_val.shape[0] if X_val is not None else 0,
                 'test_samples': X_test.shape[0],
                 'features': X_train.shape[1]
             },
@@ -263,6 +483,9 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
         with open(args.output_file, 'w') as f:
             json.dump(results, f, indent=2)
         print(f"Results saved to: {args.output_file}")
+    
+    print(f"\n Experiment completed successfully!")
+    return model, metrics
 
 
 def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
@@ -310,7 +533,7 @@ def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
         sys.exit(1)
     
     # Perform SHAP analysis
-    print("Casting SHAP analysis...")
+    print("Performing SHAP analysis...")
     try:
         shap_results = model.shap_analysis(
             X_background=X_background,
