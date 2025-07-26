@@ -7,11 +7,40 @@ along with utilities and model implementations for predictive modeling of microb
 
 __version__ = "1.0.0"
 
+# Data utilities
 from .data.loader import FriendOrFoeDataLoader
-from .model.base import BaseModel
+
+# Model classes  
+from .models.base import (
+    BaseModel,
+    TabNetModel, 
+    XGBoostModel,
+    LightGBMModel, 
+    CatBoostModel,
+    FTTransformerModel,
+    TabMModel
+)
+
+# Convenience functions
+from .data.loader import quick_load, list_all_datasets
 
 __all__ = [
+    # Core classes
     "FriendOrFoeDataLoader",
     "BaseModel",
+    
+    # Model implementations
+    "TabNetModel",
+    "XGBoostModel", 
+    "LightGBMModel",
+    "CatBoostModel",
+    "FTTransformerModel", 
+    "TabMModel",
+    
+    # Utility functions
+    "quick_load",
+    "list_all_datasets",
+    
+    # Package info
     "__version__",
 ]
