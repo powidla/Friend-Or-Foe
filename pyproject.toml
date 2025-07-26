@@ -46,9 +46,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-tabm = [
-    "tabm @ git+https://github.com/yandex-research/tabm.git",
-]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
@@ -68,7 +65,7 @@ jupyter = [
     "notebook>=6.5.0",
 ]
 all = [
-    "friend-or-foe[tabm,dev,docs,jupyter]",
+    "friend-or-foe[dev,docs,jupyter]",
 ]
 
 [project.urls]
