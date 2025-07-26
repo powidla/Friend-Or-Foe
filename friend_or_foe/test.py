@@ -20,7 +20,7 @@ warnings.filterwarnings('ignore')
 sys.path.insert(0, str(Path(__file__).parent))
 
 try:
-    from friend_or_foe.models.base import (
+    from friend_or_foe.model.base import (
         BaseModel, TabNetModel, XGBoostModel, LightGBMModel, 
         CatBoostModel, FTTransformerModel, TabMModel
     )
