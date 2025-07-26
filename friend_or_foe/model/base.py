@@ -16,6 +16,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, mean_squared_error, r2_score
 import torch
 import warnings
+from rtdl_revisiting_models import FTTransformer
 
 
 class BaseModel(ABC):
@@ -861,24 +862,6 @@ class FTTransformerModel(BaseModel):
         
         # Set default parameters based on rtdl_revisiting_models
         default_params = {
-            'd_token': 192,
-            'n_blocks': 3,
-            'attention_dropout': 0.2,
-            'ffn_dropout': 0.1,
-            'residual_dropout': 0.0,
-            'activation': 'reglu',
-            'prenormalization': True,
-            'initialization': 'kaiming',
-            'kv_compression': None,
-            'kv_compression_sharing': None,
-            'd_kv_compression': None,
-            'lr': 0.0001,
-            'weight_decay': 1e-5,
-            'max_epochs': 100,
-            'patience': 16,
-            'batch_size': 256,
-            'eval_batch_size': 4096,
-            'random_state': 42
         }
         
         for key, value in default_params.items():
@@ -974,18 +957,8 @@ class FTTransformerModel(BaseModel):
         self.model = FTTransformer(
             n_cont_features=X_train.shape[1],
             cat_cardinalities=[],  # No categorical features for Friend-Or-Foe data
-            d_out=d_out,
-            d_token=self.model_params['d_token'],
-            n_blocks=self.model_params['n_blocks'],
-            attention_dropout=self.model_params['attention_dropout'],
-            ffn_dropout=self.model_params['ffn_dropout'],
-            residual_dropout=self.model_params['residual_dropout'],
-            activation=self.model_params['activation'],
-            prenormalization=self.model_params['prenormalization'],
-            initialization=self.model_params['initialization'],
-            kv_compression=self.model_params['kv_compression'],
-            kv_compression_sharing=self.model_params['kv_compression_sharing'],
-            d_kv_compression=self.model_params['d_kv_compression']
+            d_out=d_out, 
+            **FTTransformer.get_default_kwargs()
         ).to(device)
         
         # Setup optimizer
@@ -1231,11 +1204,7 @@ class FTTransformerModel(BaseModel):
             n_cont_features=n_features,
             cat_cardinalities=[],
             d_out=d_out,
-            **{k: v for k, v in self.model_params.items() 
-               if k in ['d_token', 'n_blocks', 'attention_dropout', 'ffn_dropout', 
-                       'residual_dropout', 'activation', 'prenormalization', 
-                       'initialization', 'kv_compression', 'kv_compression_sharing', 
-                       'd_kv_compression']}
+            **FTTransformer.get_default_kwargs()
         ).to(self.device)
         
         self.model.load_state_dict(model_data['model_state_dict'])
