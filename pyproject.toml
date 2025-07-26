@@ -31,7 +31,7 @@ requires-python = ">=3.9"
 
 dependencies = [
     "tqdm==4.67.1",
-    "rtdl-num-embeddings==0.0.11", 
+    "rtdl-num-embeddings>=0.0.11", 
     "scikit-learn==1.6.1",
     "scipy==1.15.2",
     "pandas==2.2.3",
@@ -40,8 +40,8 @@ dependencies = [
     "requests==2.32.3",
     "pytorch-tabnet==4.1.0",
     "huggingface_hub>=0.20.0",
-    "delu==0.0.26",
-    "rtdl_revisiting_models==0.0.2",
+    "delu>=0.0.26",
+    "rtdl_revisiting_models>=0.0.2",
     "shap>=0.41.0",
 ]
 
