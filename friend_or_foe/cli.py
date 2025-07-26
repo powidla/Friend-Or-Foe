@@ -11,7 +11,7 @@ import json
 import pandas as pd
 
 from .data.loader import FriendOrFoeDataLoader
-from .model.base import TabNetModel, XGBoostModel, LightGBMModel, CatBoostModel, FTTransformerModel, TabMModel
+from .model.base import TabNetModel, XGBoostModel, LightGBMModel, CatBoostModel, FTTransformerModel
 
 
 def main():
@@ -157,12 +157,12 @@ Examples:
     exp_parser.add_argument('--ft-patience', type=int, help='FT-Transformer: Early stopping patience')
     exp_parser.add_argument('--ft-batch-size', type=int, help='FT-Transformer: Batch size')
     
-    # TabM specific parameters
-    exp_parser.add_argument('--tabm-lr', type=float, help='TabM: Learning rate')
-    exp_parser.add_argument('--tabm-weight-decay', type=float, help='TabM: Weight decay')
-    exp_parser.add_argument('--tabm-max-epochs', type=int, help='TabM: Maximum training epochs')
-    exp_parser.add_argument('--tabm-patience', type=int, help='TabM: Early stopping patience')
-    exp_parser.add_argument('--tabm-batch-size', type=int, help='TabM: Batch size')
+    # # TabM specific parameters
+    # exp_parser.add_argument('--tabm-lr', type=float, help='TabM: Learning rate')
+    # exp_parser.add_argument('--tabm-weight-decay', type=float, help='TabM: Weight decay')
+    # exp_parser.add_argument('--tabm-max-epochs', type=int, help='TabM: Maximum training epochs')
+    # exp_parser.add_argument('--tabm-patience', type=int, help='TabM: Early stopping patience')
+    # exp_parser.add_argument('--tabm-batch-size', type=int, help='TabM: Batch size')
     
     args = parser.parse_args()
     
@@ -362,18 +362,18 @@ def parse_model_parameters(args):
         
         custom_params.update(ft_params)
     
-    elif args.model == 'tabm':
-        tabm_params = {}
-        if args.tabm_lr is not None:
-            tabm_params['lr'] = args.tabm_lr
-        if args.tabm_weight_decay is not None:
-            tabm_params['weight_decay'] = args.tabm_weight_decay
-        if args.tabm_max_epochs is not None:
-            tabm_params['max_epochs'] = args.tabm_max_epochs
-        if args.tabm_patience is not None:
-            tabm_params['patience'] = args.tabm_patience
-        if args.tabm_batch_size is not None:
-            tabm_params['batch_size'] = args.tabm_batch_size
+    # elif args.model == 'tabm':
+    #     tabm_params = {}
+    #     if args.tabm_lr is not None:
+    #         tabm_params['lr'] = args.tabm_lr
+    #     if args.tabm_weight_decay is not None:
+    #         tabm_params['weight_decay'] = args.tabm_weight_decay
+    #     if args.tabm_max_epochs is not None:
+    #         tabm_params['max_epochs'] = args.tabm_max_epochs
+    #     if args.tabm_patience is not None:
+    #         tabm_params['patience'] = args.tabm_patience
+    #     if args.tabm_batch_size is not None:
+    #         tabm_params['batch_size'] = args.tabm_batch_size
         
         # Set defaults
         default_tabm = {
@@ -498,8 +498,8 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
         model = CatBoostModel(**model_params)
     elif args.model == 'ft_transformer':
         model = FTTransformerModel(**model_params)
-    elif args.model == 'tabm':
-        model = TabMModel(**model_params)
+    # elif args.model == 'tabm':
+    #     model = TabMModel(**model_params)
     else:
         raise ValueError(f"Unknown model: {args.model}")
     
@@ -542,7 +542,7 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     try:
         if hasattr(model, 'get_feature_importance') and args.model in ['xgboost', 'lightgbm', 'catboost']:
             importance = model.get_feature_importance()
-            print(f"\n🔝 Top 5 Most Important Features:")
+            print(f"\n Top 5 Most Important Features:")
             print("-" * 30)
             for idx, row in importance.head(5).iterrows():
                 print(f"{row['feature']:>20}: {row['importance']:.6f}")
