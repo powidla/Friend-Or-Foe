@@ -158,11 +158,11 @@ Examples:
     exp_parser.add_argument('--ft-batch-size', type=int, help='FT-Transformer: Batch size')
     
     # # TabM specific parameters
-    # exp_parser.add_argument('--tabm-lr', type=float, help='TabM: Learning rate')
-    # exp_parser.add_argument('--tabm-weight-decay', type=float, help='TabM: Weight decay')
-    # exp_parser.add_argument('--tabm-max-epochs', type=int, help='TabM: Maximum training epochs')
-    # exp_parser.add_argument('--tabm-patience', type=int, help='TabM: Early stopping patience')
-    # exp_parser.add_argument('--tabm-batch-size', type=int, help='TabM: Batch size')
+    exp_parser.add_argument('--tabm-lr', type=float, help='TabM: Learning rate')
+    exp_parser.add_argument('--tabm-weight-decay', type=float, help='TabM: Weight decay')
+    exp_parser.add_argument('--tabm-max-epochs', type=int, help='TabM: Maximum training epochs')
+    exp_parser.add_argument('--tabm-patience', type=int, help='TabM: Early stopping patience')
+    exp_parser.add_argument('--tabm-batch-size', type=int, help='TabM: Batch size')
     
     args = parser.parse_args()
     
@@ -362,18 +362,18 @@ def parse_model_parameters(args):
         
         custom_params.update(ft_params)
     
-    # elif args.model == 'tabm':
-    #     tabm_params = {}
-    #     if args.tabm_lr is not None:
-    #         tabm_params['lr'] = args.tabm_lr
-    #     if args.tabm_weight_decay is not None:
-    #         tabm_params['weight_decay'] = args.tabm_weight_decay
-    #     if args.tabm_max_epochs is not None:
-    #         tabm_params['max_epochs'] = args.tabm_max_epochs
-    #     if args.tabm_patience is not None:
-    #         tabm_params['patience'] = args.tabm_patience
-    #     if args.tabm_batch_size is not None:
-    #         tabm_params['batch_size'] = args.tabm_batch_size
+    elif args.model == 'tabm':
+        tabm_params = {}
+        if args.tabm_lr is not None:
+            tabm_params['lr'] = args.tabm_lr
+        if args.tabm_weight_decay is not None:
+            tabm_params['weight_decay'] = args.tabm_weight_decay
+        if args.tabm_max_epochs is not None:
+            tabm_params['max_epochs'] = args.tabm_max_epochs
+        if args.tabm_patience is not None:
+            tabm_params['patience'] = args.tabm_patience
+        if args.tabm_batch_size is not None:
+            tabm_params['batch_size'] = args.tabm_batch_size
         
         # Set defaults
         default_tabm = {
