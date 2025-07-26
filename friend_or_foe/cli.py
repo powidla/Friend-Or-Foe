@@ -11,7 +11,7 @@ import json
 import pandas as pd
 
 from .data.loader import FriendOrFoeDataLoader
-from .models.base import TabNetModel, XGBoostModel, LightGBMModel, CatBoostModel, FTTransformerModel, TabMModel
+from .model.base import TabNetModel, XGBoostModel, LightGBMModel, CatBoostModel, FTTransformerModel, TabMModel
 
 
 def main():
