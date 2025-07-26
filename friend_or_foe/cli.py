@@ -147,15 +147,11 @@ Examples:
     exp_parser.add_argument('--tabnet-patience', type=int, help='TabNet: Early stopping patience')
     
     # FT-Transformer specific parameters
-    # exp_parser.add_argument('--ft-n-blocks', type=int, help='FT-Transformer: Number of transformer blocks')
-    # exp_parser.add_argument('--ft-n-heads', type=int, help='FT-Transformer: Number of attention heads')
-    # exp_parser.add_argument('--ft-d-token', type=int, help='FT-Transformer: Token dimension')
-    # exp_parser.add_argument('--ft-attention-dropout', type=float, help='FT-Transformer: Attention dropout')
-    # exp_parser.add_argument('--ft-ffn-dropout', type=float, help='FT-Transformer: FFN dropout')
-    # exp_parser.add_argument('--ft-lr', type=float, help='FT-Transformer: Learning rate')
-    # exp_parser.add_argument('--ft-max-epochs', type=int, help='FT-Transformer: Maximum training epochs')
-    # exp_parser.add_argument('--ft-patience', type=int, help='FT-Transformer: Early stopping patience')
-    # exp_parser.add_argument('--ft-batch-size', type=int, help='FT-Transformer: Batch size')
+    exp_parser.add_argument('--ft-max-epochs', type=int, help='FT-Transformer: Maximum training epochs')
+    exp_parser.add_argument('--ft-patience', type=int, help='FT-Transformer: Early stopping patience')
+    exp_parser.add_argument('--ft-batch-size', type=int, help='FT-Transformer: Batch size')
+    exp_parser.add_argument('--ft-eval-batch-size', type=int, help='FT-Transformer: Evaluation batch size')
+
     
     # # TabM specific parameters
     exp_parser.add_argument('--tabm-lr', type=float, help='TabM: Learning rate')
@@ -323,44 +319,30 @@ def parse_model_parameters(args):
         
         custom_params.update(tabnet_params)
     
-    elif args.model == 'ft_transformer':
+     elif args.model == 'ft_transformer':
         ft_params = {}
-        if args.ft_n_blocks is not None:
-            ft_params['n_blocks'] = args.ft_n_blocks
-        if args.ft_n_heads is not None:
-            ft_params['n_heads'] = args.ft_n_heads
-        if args.ft_d_token is not None:
-            ft_params['d_token'] = args.ft_d_token
-        if args.ft_attention_dropout is not None:
-            ft_params['attention_dropout'] = args.ft_attention_dropout
-        if args.ft_ffn_dropout is not None:
-            ft_params['ffn_dropout'] = args.ft_ffn_dropout
-        if args.ft_lr is not None:
-            ft_params['lr'] = args.ft_lr
         if args.ft_max_epochs is not None:
             ft_params['max_epochs'] = args.ft_max_epochs
         if args.ft_patience is not None:
             ft_params['patience'] = args.ft_patience
         if args.ft_batch_size is not None:
             ft_params['batch_size'] = args.ft_batch_size
+        if args.ft_eval_batch_size is not None:
+            ft_params['eval_batch_size'] = args.ft_eval_batch_size
         
-        # Set defaults
-        default_ft = {
-            'n_blocks': 3,
-            'd_token': 192,
-            'attention_dropout': 0.2,
-            'ffn_dropout': 0.1,
-            'lr': 0.0001,
-            'max_epochs': 100,
-            'patience': 16,
-            'batch_size': 256,
-            'random_state': args.random_state
-        }
-        for key, value in default_ft.items():
-            if key not in custom_params and key not in ft_params:
-                ft_params[key] = value
-        
-        custom_params.update(ft_params)
+    # Set defaults
+    default_ft = {
+        'max_epochs': 100,
+        'patience': 16,
+        'batch_size': 256,
+        'eval_batch_size': 4096,
+        'random_state': args.random_state
+    }
+    for key, value in default_ft.items():
+        if key not in custom_params and key not in ft_params:
+            ft_params[key] = value
+    
+    custom_params.update(ft_params)
     
     elif args.model == 'tabm':
         tabm_params = {}
