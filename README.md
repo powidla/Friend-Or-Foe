@@ -145,7 +145,7 @@ python main.py --dataname GenAGORA50 --mode test --report --no_wandb
 `````
 # Update [26/07/2024]
 Friend or Foe could be installed as a pypi package via `````pip install friend_or_foe`````. 
-We provide a basic example of usage in a [notebook](https://github.com/powidla/Friend-Or-Foe/blob/main/EndtoEnd_example.ipynb).
+We provide a basic example of usage in a [notebook](https://github.com/powidla/Friend-Or-Foe/blob/main/Quick_example_Friend_or_Foe.ipynb).
 
 # License
 FriendOrFoe is under the Apache 2.0 license for code found on the associated GitHub repo and for the data hosted on HuggingFace. The LICENSE file for the repo can be found in the top-level directory.
