@@ -1,5 +1,5 @@
 tqdm==4.67.1
-rtdl-num-embeddings==0.0.11
+rtdl-num-embeddings>=0.0.11
 scikit-learn==1.6.1
 scipy==1.15.2
 pandas==2.2.3
