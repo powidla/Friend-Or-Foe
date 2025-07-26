@@ -165,6 +165,15 @@ Examples:
     exp_parser.add_argument('--tabm-patience', type=int, help='TabM: Early stopping patience')
     exp_parser.add_argument('--tabm-batch-size', type=int, help='TabM: Batch size')
     exp_parser.add_argument('--tabm-eval-batch-size', type=int, help='TabM: Evaluation batch size')
+    # For test
+    test_parser = subparsers.add_parser('test', help='Run comprehensive test suite')
+    test_parser.add_argument('--models', nargs='+', 
+                            choices=['xgboost', 'lightgbm', 'catboost', 'tabnet', 'ft_transformer', 'tabm'],
+                            help='Test specific models only')
+    test_parser.add_argument('--tasks', nargs='+', 
+                            choices=['classification', 'regression'],
+                            help='Test specific tasks only')
+    test_parser.add_argument('--quick', action='store_true', help='Run quick tests only')
 
     
     args = parser.parse_args()
@@ -189,6 +198,8 @@ Examples:
             handle_experiment(loader, args)
         elif args.command == 'shap':
             handle_shap_analysis(loader, args)
+        elif args.command == 'test':
+            handle_test_suite(args)
         else:
             parser.print_help()
             
@@ -585,6 +596,31 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     print(f"\n Experiment completed successfully!")
     return model, metrics
 
+def handle_test_suite(args):
+    """Handle test suite command."""
+    try:
+        from .test import run_all_tests, run_specific_tests
+        
+        if args.models or args.tasks:
+            success = run_specific_tests(
+                models=args.models,
+                tasks=args.tasks,
+                quick=args.quick
+            )
+        else:
+            success = run_all_tests(quick=args.quick)
+        
+        if success:
+            print("All tests passed!")
+            sys.exit(0)
+        else:
+            print("Some tests failed!")
+            sys.exit(1)
+            
+    except ImportError as e:
+        print(f"Test dependencies missing: {e}")
+        print("Install with: pip install friend-or-foe[dev]")
+        sys.exit(1)
 
 def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
     """Handle SHAP analysis command."""
