@@ -684,8 +684,7 @@ class CatBoostModel(BaseModel):
             'iterations': 100,
             'learning_rate': 0.1,
             'depth': 6,
-            'verbose': False,
-            'random_seed': 42
+            'verbose': False
         }
         
         for key, value in default_params.items():
