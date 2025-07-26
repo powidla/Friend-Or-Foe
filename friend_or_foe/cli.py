@@ -267,16 +267,16 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
 
 def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
     """Handle SHAP analysis command."""
-    print(f"🔍 Performing SHAP analysis on {args.model_type} model")
+    print(f"Performing SHAP analysis on {args.model_type} model")
     print(f"Model path: {args.model_path}")
     
     # Check if model file exists
     if not Path(args.model_path).exists():
-        print(f"❌ Error: Model file not found: {args.model_path}")
+        print(f"Error: Model file not found: {args.model_path}")
         sys.exit(1)
     
     # Load the dataset
-    print("📊 Loading dataset...")
+    print("Loading dataset...")
     data = loader.load_dataset(args.task, args.collection, args.group, args.dataset)
     
     # Combine train and validation data for background
@@ -339,17 +339,17 @@ def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
     # Compare with native feature importance if available
     try:
         native_importance = model.get_feature_importance()
-        print(f"\n📋 Top 10 Most Important Features (Native Model Importance):")
+        print(f"\n Top 10 Most Important Features (Native Model Importance):")
         print("-" * 60)
         top_native = native_importance.head(10)
         for idx, row in top_native.iterrows():
             print(f"{idx+1:2d}. {row['feature']:<25} | Importance: {row['importance']:.6f}")
     except Exception as e:
-        print(f"⚠️ Could not get native feature importance: {e}")
+        print(f"Could not get native feature importance: {e}")
     
     # Save results if save path is provided
     if args.save_path:
-        print(f"\n💾 Saving results...")
+        print(f"\n Saving results...")
         
         # Save SHAP feature importance
         shap_importance_file = f"{args.save_path}_shap_importance.csv"
