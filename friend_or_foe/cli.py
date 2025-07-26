@@ -319,7 +319,7 @@ def parse_model_parameters(args):
         
         custom_params.update(tabnet_params)
     
-     elif args.model == 'ft_transformer':
+    elif args.model == 'ft_transformer':
         ft_params = {}
         if args.ft_max_epochs is not None:
             ft_params['max_epochs'] = args.ft_max_epochs
@@ -331,19 +331,19 @@ def parse_model_parameters(args):
             ft_params['eval_batch_size'] = args.ft_eval_batch_size
         
     # Set defaults
-    default_ft = {
-        'max_epochs': 100,
-        'patience': 16,
-        'batch_size': 256,
-        'eval_batch_size': 4096,
-        'random_state': args.random_state
-    }
-    for key, value in default_ft.items():
-        if key not in custom_params and key not in ft_params:
-            ft_params[key] = value
-    
-    custom_params.update(ft_params)
-    
+        default_ft = {
+            'max_epochs': 100,
+            'patience': 16,
+            'batch_size': 256,
+            'eval_batch_size': 4096,
+            'random_state': args.random_state
+        }
+        for key, value in default_ft.items():
+            if key not in custom_params and key not in ft_params:
+                ft_params[key] = value
+        
+        custom_params.update(ft_params)
+        
     elif args.model == 'tabm':
         tabm_params = {}
         if args.tabm_lr is not None:
@@ -371,7 +371,7 @@ def parse_model_parameters(args):
                 tabm_params[key] = value
         
         custom_params.update(tabm_params)
-    
+
     return custom_params
 
 
