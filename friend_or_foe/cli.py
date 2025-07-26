@@ -302,7 +302,6 @@ def parse_model_parameters(args):
             'iterations': 200,
             'depth': 6,
             'learning_rate': 0.1,
-            'random_seed': args.random_state,
             'verbose': args.verbose
         }
         for key, value in default_cb.items():
