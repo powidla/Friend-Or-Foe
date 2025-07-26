@@ -11,7 +11,7 @@ import json
 import pandas as pd
 
 from .data.loader import FriendOrFoeDataLoader
-from .models.base import TabNetModel, XGBoostModel, LightGBMModel, CatBoostModel
+from .models.base import TabNetModel, XGBoostModel, LightGBMModel, CatBoostModel, FTTransformerModel, TabMModel
 
 
 def main():
@@ -35,6 +35,8 @@ Examples:
   friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model lightgbm --lgb-num-leaves 50 --lgb-learning-rate 0.08
   friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model catboost --cb-iterations 300 --cb-depth 8
   friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model tabnet --tabnet-n-d 64 --tabnet-n-steps 5
+  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model ft_transformer --ft-d-token 256 --ft-n-blocks 4
+  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model tabm --tabm-lr 0.001 --tabm-max-epochs 200
   
   # Use custom parameters from JSON file
   friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model xgboost --params ./xgb_params.json
@@ -104,7 +106,7 @@ Examples:
     exp_parser.add_argument('--group', required=True, choices=['50', '100'])
     exp_parser.add_argument('--dataset', required=True, help='Dataset identifier')
     exp_parser.add_argument('--model', default='xgboost', 
-                           choices=['tabnet', 'xgboost', 'lightgbm', 'catboost'], 
+                           choices=['tabnet', 'xgboost', 'lightgbm', 'catboost', 'ft_transformer', 'tabm'], 
                            help='Model to use')
     exp_parser.add_argument('--output-file', help='Save results to JSON file')
     exp_parser.add_argument('--params', help='JSON string or file path with custom model parameters')
@@ -144,6 +146,24 @@ Examples:
     exp_parser.add_argument('--tabnet-max-epochs', type=int, help='TabNet: Maximum training epochs')
     exp_parser.add_argument('--tabnet-patience', type=int, help='TabNet: Early stopping patience')
     
+    # FT-Transformer specific parameters
+    exp_parser.add_argument('--ft-n-blocks', type=int, help='FT-Transformer: Number of transformer blocks')
+    exp_parser.add_argument('--ft-n-heads', type=int, help='FT-Transformer: Number of attention heads')
+    exp_parser.add_argument('--ft-d-token', type=int, help='FT-Transformer: Token dimension')
+    exp_parser.add_argument('--ft-attention-dropout', type=float, help='FT-Transformer: Attention dropout')
+    exp_parser.add_argument('--ft-ffn-dropout', type=float, help='FT-Transformer: FFN dropout')
+    exp_parser.add_argument('--ft-lr', type=float, help='FT-Transformer: Learning rate')
+    exp_parser.add_argument('--ft-max-epochs', type=int, help='FT-Transformer: Maximum training epochs')
+    exp_parser.add_argument('--ft-patience', type=int, help='FT-Transformer: Early stopping patience')
+    exp_parser.add_argument('--ft-batch-size', type=int, help='FT-Transformer: Batch size')
+    
+    # TabM specific parameters
+    exp_parser.add_argument('--tabm-lr', type=float, help='TabM: Learning rate')
+    exp_parser.add_argument('--tabm-weight-decay', type=float, help='TabM: Weight decay')
+    exp_parser.add_argument('--tabm-max-epochs', type=int, help='TabM: Maximum training epochs')
+    exp_parser.add_argument('--tabm-patience', type=int, help='TabM: Early stopping patience')
+    exp_parser.add_argument('--tabm-batch-size', type=int, help='TabM: Batch size')
+    
     args = parser.parse_args()
     
     if args.command is None:
@@ -172,78 +192,6 @@ Examples:
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
-
-
-def handle_list_datasets(loader: FriendOrFoeDataLoader, args):
-    """Handle list-datasets command."""
-    datasets = loader.list_available_datasets(
-        task=args.task,
-        collection=args.collection, 
-        group=args.group
-    )
-    
-    print(f"Found {len(datasets)} datasets:")
-    print("-" * 50)
-    
-    for dataset_key in sorted(datasets.keys()):
-        task, collection, group, dataset = dataset_key.split('/')
-        print(f"Task: {task}, Collection: {collection}, Group: {group}, Dataset: {dataset}")
-        
-    if not datasets:
-        print("No datasets found matching the criteria.")
-
-
-def handle_download(loader: FriendOrFoeDataLoader, args):
-    """Handle download command."""
-    print(f"Downloading dataset: {args.task}/{args.collection}/{args.group}/{args.dataset}")
-    
-    data = loader.load_dataset(args.task, args.collection, args.group, args.dataset)
-    
-    # Create output directory
-    output_dir = Path(args.output_dir) / args.task / args.collection / args.group / args.dataset
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Save files
-    for key, df in data.items():
-        filename = f"{key}_{args.dataset}.csv"
-        filepath = output_dir / filename
-        df.to_csv(filepath, index=False)
-        print(f"Saved: {filepath}")
-    
-    print(f"Dataset saved to: {output_dir}")
-
-
-def handle_download_all(loader: FriendOrFoeDataLoader, args):
-    """Handle download-all command."""
-    print(f"Downloading all datasets to: {args.output_dir}")
-    loader.download_all_datasets(args.output_dir)
-    print("Download complete!")
-
-
-def handle_info(loader: FriendOrFoeDataLoader, args):
-    """Handle info command."""
-    info = loader.get_dataset_info(args.task, args.collection, args.group, args.dataset)
-    
-    if 'error' in info:
-        print(f"Error getting dataset info: {info['error']}")
-        return
-    
-    print(f"Dataset Information:")
-    print("-" * 30)
-    print(f"Task: {info['task']}")
-    print(f"Collection: {info['collection']}")
-    print(f"Group: {info['group']}")
-    print(f"Dataset: {info['dataset']}")
-    print(f"Number of features: {info['n_features']}")
-    print(f"Sample shape: {info['sample_shape']}")
-    print(f"Feature types: {len(set(info['dtypes'].values()))} unique types")
-    
-    print(f"\nFirst 10 features:")
-    for i, feature in enumerate(info['feature_names'][:10]):
-        print(f"  {i+1}. {feature} ({info['dtypes'][feature]})")
-    
-    if len(info['feature_names']) > 10:
-        print(f"  ... and {len(info['feature_names']) - 10} more features")
 
 
 def parse_model_parameters(args):
@@ -375,7 +323,146 @@ def parse_model_parameters(args):
         
         custom_params.update(tabnet_params)
     
+    elif args.model == 'ft_transformer':
+        ft_params = {}
+        if args.ft_n_blocks is not None:
+            ft_params['n_blocks'] = args.ft_n_blocks
+        if args.ft_n_heads is not None:
+            ft_params['n_heads'] = args.ft_n_heads
+        if args.ft_d_token is not None:
+            ft_params['d_token'] = args.ft_d_token
+        if args.ft_attention_dropout is not None:
+            ft_params['attention_dropout'] = args.ft_attention_dropout
+        if args.ft_ffn_dropout is not None:
+            ft_params['ffn_dropout'] = args.ft_ffn_dropout
+        if args.ft_lr is not None:
+            ft_params['lr'] = args.ft_lr
+        if args.ft_max_epochs is not None:
+            ft_params['max_epochs'] = args.ft_max_epochs
+        if args.ft_patience is not None:
+            ft_params['patience'] = args.ft_patience
+        if args.ft_batch_size is not None:
+            ft_params['batch_size'] = args.ft_batch_size
+        
+        # Set defaults
+        default_ft = {
+            'n_blocks': 3,
+            'd_token': 192,
+            'attention_dropout': 0.2,
+            'ffn_dropout': 0.1,
+            'lr': 0.0001,
+            'max_epochs': 100,
+            'patience': 16,
+            'batch_size': 256,
+            'random_state': args.random_state
+        }
+        for key, value in default_ft.items():
+            if key not in custom_params and key not in ft_params:
+                ft_params[key] = value
+        
+        custom_params.update(ft_params)
+    
+    elif args.model == 'tabm':
+        tabm_params = {}
+        if args.tabm_lr is not None:
+            tabm_params['lr'] = args.tabm_lr
+        if args.tabm_weight_decay is not None:
+            tabm_params['weight_decay'] = args.tabm_weight_decay
+        if args.tabm_max_epochs is not None:
+            tabm_params['max_epochs'] = args.tabm_max_epochs
+        if args.tabm_patience is not None:
+            tabm_params['patience'] = args.tabm_patience
+        if args.tabm_batch_size is not None:
+            tabm_params['batch_size'] = args.tabm_batch_size
+        
+        # Set defaults
+        default_tabm = {
+            'lr': 0.001,
+            'weight_decay': 0.0,
+            'max_epochs': 100,
+            'patience': 16,
+            'batch_size': 256,
+            'random_state': args.random_state
+        }
+        for key, value in default_tabm.items():
+            if key not in custom_params and key not in tabm_params:
+                tabm_params[key] = value
+        
+        custom_params.update(tabm_params)
+    
     return custom_params
+
+
+def handle_list_datasets(loader: FriendOrFoeDataLoader, args):
+    """Handle list-datasets command."""
+    datasets = loader.list_available_datasets(
+        task=args.task,
+        collection=args.collection, 
+        group=args.group
+    )
+    
+    print(f"Found {len(datasets)} datasets:")
+    print("-" * 50)
+    
+    for dataset_key in sorted(datasets.keys()):
+        task, collection, group, dataset = dataset_key.split('/')
+        print(f"Task: {task}, Collection: {collection}, Group: {group}, Dataset: {dataset}")
+        
+    if not datasets:
+        print("No datasets found matching the criteria.")
+
+
+def handle_download(loader: FriendOrFoeDataLoader, args):
+    """Handle download command."""
+    print(f"Downloading dataset: {args.task}/{args.collection}/{args.group}/{args.dataset}")
+    
+    data = loader.load_dataset(args.task, args.collection, args.group, args.dataset)
+    
+    # Create output directory
+    output_dir = Path(args.output_dir) / args.task / args.collection / args.group / args.dataset
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Save files
+    for key, df in data.items():
+        filename = f"{key}_{args.dataset}.csv"
+        filepath = output_dir / filename
+        df.to_csv(filepath, index=False)
+        print(f"Saved: {filepath}")
+    
+    print(f"Dataset saved to: {output_dir}")
+
+
+def handle_download_all(loader: FriendOrFoeDataLoader, args):
+    """Handle download-all command."""
+    print(f"Downloading all datasets to: {args.output_dir}")
+    loader.download_all_datasets(args.output_dir)
+    print("Download complete!")
+
+
+def handle_info(loader: FriendOrFoeDataLoader, args):
+    """Handle info command."""
+    info = loader.get_dataset_info(args.task, args.collection, args.group, args.dataset)
+    
+    if 'error' in info:
+        print(f"Error getting dataset info: {info['error']}")
+        return
+    
+    print(f"Dataset Information:")
+    print("-" * 30)
+    print(f"Task: {info['task']}")
+    print(f"Collection: {info['collection']}")
+    print(f"Group: {info['group']}")
+    print(f"Dataset: {info['dataset']}")
+    print(f"Number of features: {info['n_features']}")
+    print(f"Sample shape: {info['sample_shape']}")
+    print(f"Feature types: {len(set(info['dtypes'].values()))} unique types")
+    
+    print(f"\nFirst 10 features:")
+    for i, feature in enumerate(info['feature_names'][:10]):
+        print(f"  {i+1}. {feature} ({info['dtypes'][feature]})")
+    
+    if len(info['feature_names']) > 10:
+        print(f"  ... and {len(info['feature_names']) - 10} more features")
 
 
 def handle_experiment(loader: FriendOrFoeDataLoader, args):
@@ -409,6 +496,10 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
         model = LightGBMModel(**model_params)
     elif args.model == 'catboost':
         model = CatBoostModel(**model_params)
+    elif args.model == 'ft_transformer':
+        model = FTTransformerModel(**model_params)
+    elif args.model == 'tabm':
+        model = TabMModel(**model_params)
     else:
         raise ValueError(f"Unknown model: {args.model}")
     
@@ -422,7 +513,7 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
         if args.tabnet_lr is not None:
             fit_params['lr'] = args.tabnet_lr
     
-    # Train model
+    # Train mode
     print("Training model...")
     import time
     start_time = time.time()
@@ -441,17 +532,17 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     metrics = model.evaluate(X_test, y_test, task_type=args.task.lower())
     
     # Display results
-    print(f"\n Results:")
+    print(f"\nResults:")
     print("-" * 40)
     for metric, value in metrics.items():
         print(f"{metric:>15}: {value:.6f}")
     print(f"{'training_time':>15}: {training_time:.2f}s")
     
-    # Show feature importance if available
+    # Show feature importance if available (only for tree-based models)
     try:
-        if hasattr(model, 'get_feature_importance'):
+        if hasattr(model, 'get_feature_importance') and args.model in ['xgboost', 'lightgbm', 'catboost']:
             importance = model.get_feature_importance()
-            print(f"\n Top 5 Most Important Features:")
+            print(f"\n🔝 Top 5 Most Important Features:")
             print("-" * 30)
             for idx, row in importance.head(5).iterrows():
                 print(f"{row['feature']:>20}: {row['importance']:.6f}")
@@ -490,7 +581,7 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
 
 def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
     """Handle SHAP analysis command."""
-    print(f"Performing SHAP analysis on {args.model_type} model")
+    print(f"🔍 Performing SHAP analysis on {args.model_type} model")
     print(f"Model path: {args.model_path}")
     
     # Check if model file exists
@@ -606,7 +697,7 @@ def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
             json.dump(metadata, f, indent=2)
         print(f"Analysis metadata saved to: {metadata_file}")
     
-    print(f"\n SHAP analysis completed for {args.model_type} model!")
+    print(f"\nSHAP analysis completed for {args.model_type} model!")
     if args.save_path:
         print(f"All results saved with prefix: {args.save_path}")
 
