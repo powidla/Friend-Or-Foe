@@ -11,7 +11,7 @@ __version__ = "1.0.0"
 from .data.loader import FriendOrFoeDataLoader
 
 # Model classes  
-from .models.base import (
+from .model.base import (
     BaseModel,
     TabNetModel, 
     XGBoostModel,
