@@ -154,11 +154,18 @@ Examples:
 
     
     # # TabM specific parameters
+    exp_parser.add_argument('--tabm-arch-type', choices=['tabm', 'tabm-mini'], default='tabm', help='TabM: Architecture type')
+    exp_parser.add_argument('--tabm-k', type=int, help='TabM: Number of ensemble members')
+    exp_parser.add_argument('--tabm-n-blocks', type=int, help='TabM: Number of MLP blocks')
+    exp_parser.add_argument('--tabm-d-block', type=int, help='TabM: MLP block dimension')
+    exp_parser.add_argument('--tabm-dropout', type=float, help='TabM: Dropout rate')
     exp_parser.add_argument('--tabm-lr', type=float, help='TabM: Learning rate')
     exp_parser.add_argument('--tabm-weight-decay', type=float, help='TabM: Weight decay')
     exp_parser.add_argument('--tabm-max-epochs', type=int, help='TabM: Maximum training epochs')
     exp_parser.add_argument('--tabm-patience', type=int, help='TabM: Early stopping patience')
     exp_parser.add_argument('--tabm-batch-size', type=int, help='TabM: Batch size')
+    exp_parser.add_argument('--tabm-eval-batch-size', type=int, help='TabM: Evaluation batch size')
+
     
     args = parser.parse_args()
     
@@ -346,6 +353,16 @@ def parse_model_parameters(args):
         
     elif args.model == 'tabm':
         tabm_params = {}
+        if args.tabm_arch_type is not None:
+            tabm_params['arch_type'] = args.tabm_arch_type
+        if args.tabm_k is not None:
+            tabm_params['k'] = args.tabm_k
+        if args.tabm_n_blocks is not None:
+            tabm_params['n_blocks'] = args.tabm_n_blocks
+        if args.tabm_d_block is not None:
+            tabm_params['d_block'] = args.tabm_d_block
+        if args.tabm_dropout is not None:
+            tabm_params['dropout'] = args.tabm_dropout
         if args.tabm_lr is not None:
             tabm_params['lr'] = args.tabm_lr
         if args.tabm_weight_decay is not None:
@@ -356,14 +373,22 @@ def parse_model_parameters(args):
             tabm_params['patience'] = args.tabm_patience
         if args.tabm_batch_size is not None:
             tabm_params['batch_size'] = args.tabm_batch_size
+        if args.tabm_eval_batch_size is not None:
+            tabm_params['eval_batch_size'] = args.tabm_eval_batch_size
         
         # Set defaults
         default_tabm = {
-            'lr': 0.001,
-            'weight_decay': 0.0,
-            'max_epochs': 100,
-            'patience': 16,
+            'arch_type': 'tabm',
+            'k': 32,
+            'n_blocks': 3,
+            'd_block': 512,
+            'dropout': 0.1,
+            'lr': 2e-3,
+            'weight_decay': 3e-4,
+            'max_epochs': 2000,
+            'patience': 200,
             'batch_size': 256,
+            'eval_batch_size': 128,
             'random_state': args.random_state
         }
         for key, value in default_tabm.items():
@@ -480,8 +505,8 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
         model = CatBoostModel(**model_params)
     elif args.model == 'ft_transformer':
         model = FTTransformerModel(**model_params)
-    # elif args.model == 'tabm':
-    #     model = TabMModel(**model_params)
+    elif args.model == 'tabm':
+        model = TabMModel(**model_params)
     else:
         raise ValueError(f"Unknown model: {args.model}")
     
