@@ -1,6 +1,11 @@
 
 """
-Base Model Classes and CLI Interface for Friend-Or-Foe Package
+Friend-Or-Foe package base functions.
+Currently supports loading data from hugging face repo: https://huggingface.co/datasets/powidla/Friend-Or-Foe
+The following models can be called via abstract class: 
+- GBDTs: xbg, lghtgbm, catboost
+- NNs: TabNet, FT, TabM
+In additon for GBDTs it is possible to perform SHAP analysis and plot basic graphs (drop, waterfall).
 """
 
 # friend_or_foe/models/base.py
@@ -126,14 +131,14 @@ class BaseModel(ABC):
         }
     
     def save_model(self, filepath: str):
-        """Save the trained model to disk."""
+        """Save the trained model."""
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
         # Implementation depends on specific model type
         raise NotImplementedError("save_model must be implemented by subclasses")
     
     def load_model(self, filepath: str):
-        """Load a trained model from disk."""
+        """Load a trained model."""
         # Implementation depends on specific model type
         raise NotImplementedError("load_model must be implemented by subclasses")
 
@@ -209,7 +214,7 @@ class TabNetModel(BaseModel):
         return self.model.predict_proba(X_np)
     
     def save_model(self, filepath: str):
-        """Save TabNet model."""
+        """Save."""
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
         
