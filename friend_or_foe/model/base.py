@@ -1214,3 +1214,413 @@ class FTTransformerModel(BaseModel):
         
         self.model.load_state_dict(model_data['model_state_dict'])
         self.is_fitted = True
+
+class TabMModel(BaseModel):
+    """
+    TabM model implementation using the official TabM code.
+    """
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        
+        # Set default parameters
+        default_params = {
+            'arch_type': 'tabm',
+            'k': 32,
+            'n_blocks': 3,
+            'd_block': 512,
+            'dropout': 0.1,
+            'lr': 2e-3,
+            'weight_decay': 3e-4,
+            'max_epochs': 2000,
+            'patience': 200,
+            'batch_size': 256,
+            'eval_batch_size': 128,
+            'random_state': 42
+        }
+        
+        for key, value in default_params.items():
+            if key not in self.model_params:
+                self.model_params[key] = value
+    
+    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame,
+            X_val: Optional[pd.DataFrame] = None,
+            y_val: Optional[pd.DataFrame] = None,
+            task_type: str = "classification") -> 'TabMModel':
+        """Fit TabM model using the official implementation."""
+        
+        try:
+            import torch
+            import torch.nn.functional as F
+            import numpy as np
+            import scipy.special
+            import sklearn.preprocessing
+            import sklearn.metrics
+            from tqdm import tqdm
+            import math
+            import random
+            
+            # Import TabM modules from the model directory
+            from .tabm.model import Model, make_parameter_groups
+            
+        except ImportError:
+            raise ImportError("Required packages missing. Install TabM dependencies and ensure model files are in friend_or_foe/models/tabm/")
+        
+        # Set random seeds
+        seed = self.model_params['random_state']
+        random.seed(seed)
+        np.random.seed(seed + 1)
+        torch.manual_seed(seed + 2)
+        
+        # Set device
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        
+        print("Preprocessing data for TabM...")
+        
+        # Convert to numpy
+        X_train_np = X_train.values.astype(np.float32)
+        y_train_np = y_train.values.flatten()
+        
+        X_val_np = X_val.values.astype(np.float32) if X_val is not None else None
+        y_val_np = y_val.values.flatten() if y_val is not None else None
+        
+        # Feature preprocessing (quantile transformation)
+        noise = np.random.default_rng(seed).normal(
+            0.0, 1e-5, X_train_np.shape
+        ).astype(X_train_np.dtype)
+        
+        preprocessing = sklearn.preprocessing.QuantileTransformer(
+            n_quantiles=max(min(len(X_train_np) // 30, 1000), 10),
+            output_distribution='normal',
+            subsample=10**9,
+        ).fit(X_train_np + noise)
+        
+        X_train_processed = preprocessing.transform(X_train_np)
+        X_val_processed = preprocessing.transform(X_val_np) if X_val_np is not None else None
+        
+        # Determine task type and prepare labels
+        if task_type.lower() == "classification":
+            n_classes = len(np.unique(y_train_np))
+            if n_classes == 2:
+                self.task_type = "binclass"
+            else:
+                self.task_type = "multiclass"
+            self.n_classes = n_classes
+            self.regression_label_stats = None
+            
+            # Convert to int64 for classification
+            y_train_processed = y_train_np.astype(np.int64)
+            y_val_processed = y_val_np.astype(np.int64) if y_val_np is not None else None
+        else:
+            self.task_type = "regression"
+            self.n_classes = None
+            
+            # Normalize labels for regression
+            self.regression_label_stats = {
+                'mean': y_train_np.mean(),
+                'std': y_train_np.std()
+            }
+            y_train_processed = (y_train_np - self.regression_label_stats['mean']) / self.regression_label_stats['std']
+            y_val_processed = (y_val_np - self.regression_label_stats['mean']) / self.regression_label_stats['std'] if y_val_np is not None else None
+        
+        # Prepare data dictionaries
+        data_numpy = {
+            'train': {'x_cont': X_train_processed, 'y': y_train_processed},
+        }
+        
+        if X_val_processed is not None:
+            data_numpy['val'] = {'x_cont': X_val_processed, 'y': y_val_processed}
+        
+        # Convert to tensors
+        data = {
+            part: {k: torch.as_tensor(v, device=device) for k, v in data_numpy[part].items()}
+            for part in data_numpy
+        }
+        
+        # Set correct tensor types
+        if self.task_type == "regression":
+            for part in data:
+                data[part]['y'] = data[part]['y'].float()
+        
+        # Create model
+        print("Creating TabM model...")
+        
+        # TabM configuration
+        self.model = Model(
+            n_num_features=X_train.shape[1],
+            cat_cardinalities=[],  # No categorical features for Friend-Or-Foe
+            n_classes=self.n_classes,
+            backbone={
+                'type': 'MLP',
+                'n_blocks': self.model_params['n_blocks'],
+                'd_block': self.model_params['d_block'],
+                'dropout': self.model_params['dropout'],
+            },
+            bins=None,
+            num_embeddings=None,
+            arch_type=self.model_params['arch_type'],
+            k=self.model_params['k'],
+        ).to(device)
+        
+        # Setup optimizer
+        optimizer = torch.optim.AdamW(
+            make_parameter_groups(self.model), 
+            lr=self.model_params['lr'], 
+            weight_decay=self.model_params['weight_decay']
+        )
+        
+        # Loss function
+        base_loss_fn = F.mse_loss if self.task_type == 'regression' else F.cross_entropy
+        
+        def loss_fn(y_pred: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
+            # TabM produces k predictions per object
+            k = y_pred.shape[-1 if self.task_type == 'regression' else -2]
+            return base_loss_fn(y_pred.flatten(0, 1), y_true.repeat_interleave(k))
+        
+        # Model application function
+        def apply_model(part: str, idx: torch.Tensor) -> torch.Tensor:
+            return (
+                self.model(
+                    data[part]['x_cont'][idx],
+                    None  # No categorical features
+                )
+                .squeeze(-1)  # Remove last dimension for regression
+                .float()
+            )
+        
+        # Evaluation function
+        @torch.no_grad()
+        def evaluate(part: str) -> float:
+            self.model.eval()
+            
+            eval_batch_size = self.model_params['eval_batch_size']
+            y_pred = torch.cat([
+                apply_model(part, idx)
+                for idx in torch.arange(len(data[part]['y']), device=device).split(eval_batch_size)
+            ]).cpu().numpy()
+            
+            if self.task_type == 'regression':
+                # Transform predictions back to original space
+                y_pred = y_pred * self.regression_label_stats['std'] + self.regression_label_stats['mean']
+            
+            # Compute mean of k predictions
+            if self.task_type != 'regression':
+                y_pred = scipy.special.softmax(y_pred, axis=-1)
+            y_pred = y_pred.mean(1)
+            
+            y_true = data[part]['y'].cpu().numpy()
+            if self.task_type == 'regression':
+                # Transform true values back to original space for evaluation
+                y_true = y_true * self.regression_label_stats['std'] + self.regression_label_stats['mean']
+                score = -np.sqrt(sklearn.metrics.mean_squared_error(y_true, y_pred))
+            else:
+                score = sklearn.metrics.accuracy_score(y_true, y_pred.argmax(1))
+            
+            return float(score)
+        
+        # Training loop
+        print("Training TabM...")
+        
+        batch_size = self.model_params['batch_size']
+        epoch_size = math.ceil(len(data['train']['y']) / batch_size)
+        
+        best = {
+            'val': -math.inf,
+            'test': -math.inf,
+            'epoch': -1,
+        }
+        remaining_patience = self.model_params['patience']
+        
+        self.training_history = {
+            'train_loss': [],
+            'val_score': [],
+            'best_epoch': -1,
+            'best_val_score': -float('inf')
+        }
+        
+        best_state_dict = None
+        Y_train_tensor = data['train']['y']
+        
+        for epoch in range(self.model_params['max_epochs']):
+            # Training
+            self.model.train()
+            epoch_loss = 0
+            n_batches = 0
+            
+            progress_bar = tqdm(
+                torch.randperm(len(data['train']['y']), device=device).split(batch_size),
+                desc=f"Epoch {epoch+1}/{self.model_params['max_epochs']}",
+                total=epoch_size,
+                leave=False
+            )
+            
+            for batch_idx in progress_bar:
+                optimizer.zero_grad()
+                loss = loss_fn(apply_model('train', batch_idx), Y_train_tensor[batch_idx])
+                loss.backward()
+                optimizer.step()
+                
+                epoch_loss += loss.item()
+                n_batches += 1
+                
+                progress_bar.set_postfix({'loss': f'{loss.item():.4f}'})
+            
+            avg_train_loss = epoch_loss / n_batches
+            self.training_history['train_loss'].append(avg_train_loss)
+            
+            # Validation
+            if 'val' in data:
+                val_score = evaluate('val')
+                self.training_history['val_score'].append(val_score)
+                
+                print(f"Epoch {epoch+1}: train_loss={avg_train_loss:.4f}, val_score={val_score:.4f}")
+                
+                if val_score > best['val']:
+                    print("New best epoch!")
+                    best = {'val': val_score, 'epoch': epoch}
+                    self.training_history['best_val_score'] = val_score
+                    self.training_history['best_epoch'] = epoch
+                    best_state_dict = self.model.state_dict().copy()
+                    remaining_patience = self.model_params['patience']
+                else:
+                    remaining_patience -= 1
+                
+                if remaining_patience < 0:
+                    print(f"Early stopping at epoch {epoch+1}")
+                    break
+            else:
+                print(f"Epoch {epoch+1}: train_loss={avg_train_loss:.4f}")
+        
+        # Load best model if validation was used
+        if best_state_dict is not None:
+            self.model.load_state_dict(best_state_dict)
+            print(f"Loaded best model from epoch {self.training_history['best_epoch']+1}")
+        
+        self.is_fitted = True
+        self.device = device
+        self.preprocessing = preprocessing
+        self.n_features = X_train.shape[1]
+        return self
+    
+    def predict(self, X: pd.DataFrame) -> np.ndarray:
+        """Make predictions with TabM."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before prediction")
+        
+        import torch
+        import numpy as np
+        import scipy.special
+        
+        # Preprocess features
+        X_processed = self.preprocessing.transform(X.values.astype(np.float32))
+        X_tensor = torch.FloatTensor(X_processed).to(self.device)
+        
+        self.model.eval()
+        predictions = []
+        
+        with torch.no_grad():
+            eval_batch_size = self.model_params['eval_batch_size']
+            for idx in torch.arange(len(X_tensor), device=self.device).split(eval_batch_size):
+                preds = self.model(X_tensor[idx], None).squeeze(-1).float()
+                predictions.append(preds.cpu().numpy())
+        
+        y_pred = np.concatenate(predictions)
+        
+        if self.task_type == 'regression':
+            # Transform back to original space
+            y_pred = y_pred * self.regression_label_stats['std'] + self.regression_label_stats['mean']
+            # Return mean of k predictions
+            return y_pred.mean(1)
+        else:
+            # For classification, compute mean in probability space
+            y_pred = scipy.special.softmax(y_pred, axis=-1)
+            y_pred = y_pred.mean(1)
+            return y_pred.argmax(1)
+    
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict probabilities with TabM (classification only)."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before prediction")
+        
+        if self.task_type == "regression":
+            raise NotImplementedError("predict_proba not available for regression")
+        
+        import torch
+        import numpy as np
+        import scipy.special
+        
+        # Preprocess features
+        X_processed = self.preprocessing.transform(X.values.astype(np.float32))
+        X_tensor = torch.FloatTensor(X_processed).to(self.device)
+        
+        self.model.eval()
+        predictions = []
+        
+        with torch.no_grad():
+            eval_batch_size = self.model_params['eval_batch_size']
+            for idx in torch.arange(len(X_tensor), device=self.device).split(eval_batch_size):
+                preds = self.model(X_tensor[idx], None).squeeze(-1).float()
+                predictions.append(preds.cpu().numpy())
+        
+        y_pred = np.concatenate(predictions)
+        
+        # Convert to probabilities and average across k predictions
+        y_pred = scipy.special.softmax(y_pred, axis=-1)
+        return y_pred.mean(1)
+    
+    def save_model(self, filepath: str):
+        """Save TabM model."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before saving")
+        
+        import torch
+        
+        model_data = {
+            'model_state_dict': self.model.state_dict(),
+            'model_params': self.model_params,
+            'training_history': self.training_history,
+            'task_type': self.task_type,
+            'n_classes': self.n_classes,
+            'regression_label_stats': self.regression_label_stats,
+            'preprocessing': self.preprocessing,
+            'device': str(self.device),
+            'n_features': self.n_features,
+        }
+        
+        torch.save(model_data, filepath)
+    
+    def load_model(self, filepath: str):
+        """Load TabM model."""
+        import torch
+        from .tabm.model import Model
+        
+        model_data = torch.load(filepath, map_location='cpu')
+        
+        self.model_params = model_data['model_params']
+        self.training_history = model_data['training_history']
+        self.task_type = model_data['task_type']
+        self.n_classes = model_data['n_classes']
+        self.regression_label_stats = model_data['regression_label_stats']
+        self.preprocessing = model_data['preprocessing']
+        self.device = torch.device(model_data['device'])
+        self.n_features = model_data['n_features']
+        
+        # Recreate model
+        self.model = Model(
+            n_num_features=self.n_features,
+            cat_cardinalities=[],
+            n_classes=self.n_classes,
+            backbone={
+                'type': 'MLP',
+                'n_blocks': self.model_params['n_blocks'],
+                'd_block': self.model_params['d_block'],
+                'dropout': self.model_params['dropout'],
+            },
+            bins=None,
+            num_embeddings=None,
+            arch_type=self.model_params['arch_type'],
+            k=self.model_params['k'],
+        ).to(self.device)
+        
+        self.model.load_state_dict(model_data['model_state_dict'])
+        self.is_fitted = True
