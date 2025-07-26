@@ -11,8 +11,8 @@ huggingface_hub>=0.20.0
 xgboost>=1.7.0
 lightgbm>=3.3.0
 catboost>=1.2.0
-delu==0.0.26
+delu>=0.0.26
 shap>=0.41.0
-rtdl_revisiting_models==0.0.2
+rtdl_revisiting_models>=0.0.2
 # Optional: TabM (install separately due to git dependency)
 # tabm pip install tabm
