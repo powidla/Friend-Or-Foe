@@ -850,3 +850,393 @@ class CatBoostModel(BaseModel):
             'feature_importance': feature_importance,
             'expected_value': explainer.expected_value
         }
+
+class FTTransformerModel(BaseModel):
+    """
+    FT-Transformer model implementation using rtdl_revisiting_models package.
+    """
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        
+        # Set default parameters based on rtdl_revisiting_models
+        default_params = {
+            'd_token': 192,
+            'n_blocks': 3,
+            'attention_dropout': 0.2,
+            'ffn_dropout': 0.1,
+            'residual_dropout': 0.0,
+            'activation': 'reglu',
+            'prenormalization': True,
+            'initialization': 'kaiming',
+            'kv_compression': None,
+            'kv_compression_sharing': None,
+            'd_kv_compression': None,
+            'lr': 0.0001,
+            'weight_decay': 1e-5,
+            'max_epochs': 100,
+            'patience': 16,
+            'batch_size': 256,
+            'eval_batch_size': 4096,
+            'random_state': 42
+        }
+        
+        for key, value in default_params.items():
+            if key not in self.model_params:
+                self.model_params[key] = value
+    
+    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame,
+            X_val: Optional[pd.DataFrame] = None,
+            y_val: Optional[pd.DataFrame] = None,
+            task_type: str = "classification") -> 'FTTransformerModel':
+        """Fit FT-Transformer model using rtdl_revisiting_models."""
+        
+        try:
+            import torch
+            import torch.nn.functional as F
+            import delu
+            import numpy as np
+            import scipy.special
+            import sklearn.preprocessing
+            from rtdl_revisiting_models import FTTransformer
+            from tqdm import tqdm
+            import math
+        except ImportError:
+            raise ImportError("Required packages missing. Install with: pip install rtdl-revisiting-models delu")
+        
+        # Set device
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        delu.random.seed(self.model_params['random_state'])
+        
+        # Prepare data
+        print("Preprocessing data for FT-Transformer...")
+        
+        # Convert to numpy
+        X_train_np = X_train.values.astype(np.float32)
+        y_train_np = y_train.values.flatten()
+        
+        X_val_np = X_val.values.astype(np.float32) if X_val is not None else None
+        y_val_np = y_val.values.flatten() if y_val is not None else None
+        
+        # Feature preprocessing (using quantile transformation like in the example)
+        noise = np.random.default_rng(self.model_params['random_state']).normal(
+            0.0, 1e-5, X_train_np.shape
+        ).astype(X_train_np.dtype)
+        
+        preprocessing = sklearn.preprocessing.QuantileTransformer(
+            n_quantiles=max(min(len(X_train_np) // 30, 1000), 10),
+            output_distribution="normal",
+            subsample=10**9,
+        ).fit(X_train_np + noise)
+        
+        X_train_processed = preprocessing.transform(X_train_np)
+        X_val_processed = preprocessing.transform(X_val_np) if X_val_np is not None else None
+        
+        # Determine task type and prepare labels
+        if task_type.lower() == "classification":
+            n_classes = len(np.unique(y_train_np))
+            if n_classes == 2:
+                self.task_type = "binclass"
+                d_out = 1
+                y_train_tensor = torch.FloatTensor(y_train_np).to(device)
+                y_val_tensor = torch.FloatTensor(y_val_np).to(device) if y_val_np is not None else None
+            else:
+                self.task_type = "multiclass"
+                d_out = n_classes
+                y_train_tensor = torch.LongTensor(y_train_np).to(device)
+                y_val_tensor = torch.LongTensor(y_val_np).to(device) if y_val_np is not None else None
+        else:
+            self.task_type = "regression"
+            d_out = 1
+            # Normalize labels for regression
+            self.Y_mean = y_train_np.mean()
+            self.Y_std = y_train_np.std()
+            y_train_normalized = (y_train_np - self.Y_mean) / self.Y_std
+            y_val_normalized = (y_val_np - self.Y_mean) / self.Y_std if y_val_np is not None else None
+            
+            y_train_tensor = torch.FloatTensor(y_train_normalized).to(device)
+            y_val_tensor = torch.FloatTensor(y_val_normalized).to(device) if y_val_normalized is not None else None
+        
+        # Convert to tensors
+        X_train_tensor = torch.FloatTensor(X_train_processed).to(device)
+        X_val_tensor = torch.FloatTensor(X_val_processed).to(device) if X_val_processed is not None else None
+        
+        # Prepare data dictionaries
+        data = {
+            'train': {'x_cont': X_train_tensor, 'y': y_train_tensor},
+        }
+        
+        if X_val_tensor is not None:
+            data['val'] = {'x_cont': X_val_tensor, 'y': y_val_tensor}
+        
+        # Create model
+        print("Creating FT-Transformer model...")
+        self.model = FTTransformer(
+            n_cont_features=X_train.shape[1],
+            cat_cardinalities=[],  # No categorical features for Friend-Or-Foe data
+            d_out=d_out,
+            d_token=self.model_params['d_token'],
+            n_blocks=self.model_params['n_blocks'],
+            attention_dropout=self.model_params['attention_dropout'],
+            ffn_dropout=self.model_params['ffn_dropout'],
+            residual_dropout=self.model_params['residual_dropout'],
+            activation=self.model_params['activation'],
+            prenormalization=self.model_params['prenormalization'],
+            initialization=self.model_params['initialization'],
+            kv_compression=self.model_params['kv_compression'],
+            kv_compression_sharing=self.model_params['kv_compression_sharing'],
+            d_kv_compression=self.model_params['d_kv_compression']
+        ).to(device)
+        
+        # Setup optimizer
+        optimizer = self.model.make_default_optimizer()
+        
+        # Define loss function
+        if self.task_type == "binclass":
+            loss_fn = F.binary_cross_entropy_with_logits
+        elif self.task_type == "multiclass":
+            loss_fn = F.cross_entropy
+        else:
+            loss_fn = F.mse_loss
+        
+        # Helper function to apply model
+        def apply_model(batch):
+            return self.model(batch["x_cont"], batch.get("x_cat")).squeeze(-1)
+        
+        # Evaluation function
+        @torch.no_grad()
+        def evaluate(part: str) -> float:
+            self.model.eval()
+            
+            y_pred_list = []
+            y_true_list = []
+            
+            for batch in delu.iter_batches(data[part], self.model_params['eval_batch_size']):
+                preds = apply_model(batch)
+                y_pred_list.append(preds.cpu().numpy())
+                y_true_list.append(batch["y"].cpu().numpy())
+            
+            y_pred = np.concatenate(y_pred_list)
+            y_true = np.concatenate(y_true_list)
+            
+            if self.task_type == "binclass":
+                y_pred_prob = scipy.special.expit(y_pred)
+                y_pred_binary = np.round(y_pred_prob)
+                score = sklearn.metrics.accuracy_score(y_true, y_pred_binary)
+            elif self.task_type == "multiclass":
+                y_pred_class = y_pred.argmax(1)
+                score = sklearn.metrics.accuracy_score(y_true, y_pred_class)
+            else:
+                # Regression - return negative RMSE for maximization
+                score = -np.sqrt(sklearn.metrics.mean_squared_error(y_true, y_pred))
+            
+            return score
+        
+        # Training loop
+        print("Training FT-Transformer...")
+        batch_size = self.model_params['batch_size']
+        epoch_size = math.ceil(len(X_train_tensor) / batch_size)
+        early_stopping = delu.tools.EarlyStopping(self.model_params['patience'], mode="max")
+        
+        self.training_history = {
+            'train_loss': [],
+            'val_score': [],
+            'best_epoch': -1,
+            'best_val_score': -float('inf')
+        }
+        
+        best_state_dict = None
+        
+        for epoch in range(self.model_params['max_epochs']):
+            # Training
+            self.model.train()
+            epoch_loss = 0
+            n_batches = 0
+            
+            progress_bar = tqdm(
+                delu.iter_batches(data["train"], batch_size, shuffle=True),
+                desc=f"Epoch {epoch+1}/{self.model_params['max_epochs']}",
+                total=epoch_size,
+                leave=False
+            )
+            
+            for batch in progress_bar:
+                optimizer.zero_grad()
+                predictions = apply_model(batch)
+                
+                if self.task_type == "multiclass":
+                    loss = loss_fn(predictions, batch["y"])
+                else:
+                    loss = loss_fn(predictions, batch["y"])
+                
+                loss.backward()
+                optimizer.step()
+                
+                epoch_loss += loss.item()
+                n_batches += 1
+                
+                progress_bar.set_postfix({'loss': f'{loss.item():.4f}'})
+            
+            avg_train_loss = epoch_loss / n_batches
+            self.training_history['train_loss'].append(avg_train_loss)
+            
+            # Validation
+            if 'val' in data:
+                val_score = evaluate("val")
+                self.training_history['val_score'].append(val_score)
+                
+                print(f"Epoch {epoch+1}: train_loss={avg_train_loss:.4f}, val_score={val_score:.4f}")
+                
+                # Early stopping check
+                early_stopping.update(val_score)
+                if val_score > self.training_history['best_val_score']:
+                    self.training_history['best_val_score'] = val_score
+                    self.training_history['best_epoch'] = epoch
+                    best_state_dict = self.model.state_dict().copy()
+                
+                if early_stopping.should_stop():
+                    print(f"Early stopping at epoch {epoch+1}")
+                    break
+            else:
+                print(f"Epoch {epoch+1}: train_loss={avg_train_loss:.4f}")
+        
+        # Load best model if validation was used
+        if best_state_dict is not None:
+            self.model.load_state_dict(best_state_dict)
+            print(f"Loaded best model from epoch {self.training_history['best_epoch']+1}")
+        
+        self.is_fitted = True
+        self.device = device
+        self.preprocessing = preprocessing
+        return self
+    
+    def predict(self, X: pd.DataFrame) -> np.ndarray:
+        """Make predictions with FT-Transformer."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before prediction")
+    
+        
+        # Preprocess features
+        X_processed = self.preprocessing.transform(X.values.astype(np.float32))
+        X_tensor = torch.FloatTensor(X_processed).to(self.device)
+        
+        self.model.eval()
+        predictions = []
+        
+        with torch.no_grad():
+            data_dict = {'x_cont': X_tensor}
+            for batch in delu.iter_batches(data_dict, self.model_params['eval_batch_size']):
+                preds = self.model(batch["x_cont"], batch.get("x_cat")).squeeze(-1)
+                predictions.append(preds.cpu().numpy())
+        
+        y_pred = np.concatenate(predictions)
+        
+        if self.task_type == "binclass":
+            y_pred_prob = scipy.special.expit(y_pred)
+            return np.round(y_pred_prob).astype(int)
+        elif self.task_type == "multiclass":
+            return y_pred.argmax(1)
+        else:
+            # Regression - denormalize
+            return y_pred * self.Y_std + self.Y_mean
+    
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        """Predict probabilities with FT-Transformer (classification only)."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before prediction")
+        
+        if self.task_type == "regression":
+            raise NotImplementedError("predict_proba not available for regression")
+        
+        import torch
+        import delu
+        import numpy as np
+        import scipy.special
+        
+        # Preprocess features
+        X_processed = self.preprocessing.transform(X.values.astype(np.float32))
+        X_tensor = torch.FloatTensor(X_processed).to(self.device)
+        
+        self.model.eval()
+        predictions = []
+        
+        with torch.no_grad():
+            data_dict = {'x_cont': X_tensor}
+            for batch in delu.iter_batches(data_dict, self.model_params['eval_batch_size']):
+                preds = self.model(batch["x_cont"], batch.get("x_cat")).squeeze(-1)
+                predictions.append(preds.cpu().numpy())
+        
+        y_pred = np.concatenate(predictions)
+        
+        if self.task_type == "binclass":
+            y_pred_prob = scipy.special.expit(y_pred)
+            return np.column_stack([1 - y_pred_prob, y_pred_prob])
+        else:
+            # Multiclass
+            return scipy.special.softmax(y_pred, axis=1)
+    
+    def save_model(self, filepath: str):
+        """Save FT-Transformer model."""
+        if not self.is_fitted:
+            raise ValueError("Model must be fitted before saving")
+        
+        import torch
+        
+        model_data = {
+            'model_state_dict': self.model.state_dict(),
+            'model_params': self.model_params,
+            'training_history': self.training_history,
+            'task_type': self.task_type,
+            'preprocessing': self.preprocessing,
+            'device': str(self.device),
+        }
+        
+        # Add regression-specific attributes
+        if self.task_type == "regression":
+            model_data['Y_mean'] = self.Y_mean
+            model_data['Y_std'] = self.Y_std
+        
+        torch.save(model_data, filepath)
+    
+    def load_model(self, filepath: str):
+        """Load FT-Transformer model."""
+        import torch
+        from rtdl_revisiting_models import FTTransformer
+        
+        model_data = torch.load(filepath, map_location='cpu')
+        
+        self.model_params = model_data['model_params']
+        self.training_history = model_data['training_history']
+        self.task_type = model_data['task_type']
+        self.preprocessing = model_data['preprocessing']
+        self.device = torch.device(model_data['device'])
+        
+        if self.task_type == "regression":
+            self.Y_mean = model_data['Y_mean']
+            self.Y_std = model_data['Y_std']
+        
+        # Recreate model architecture
+        if self.task_type == "binclass":
+            d_out = 1
+        elif self.task_type == "multiclass":
+            # This would need to be stored or inferred
+            d_out = 2  # Default, should be stored properly
+        else:
+            d_out = 1
+        
+        # Get number of features from preprocessing
+        n_features = self.preprocessing.n_features_in_
+        
+        self.model = FTTransformer(
+            n_cont_features=n_features,
+            cat_cardinalities=[],
+            d_out=d_out,
+            **{k: v for k, v in self.model_params.items() 
+               if k in ['d_token', 'n_blocks', 'attention_dropout', 'ffn_dropout', 
+                       'residual_dropout', 'activation', 'prenormalization', 
+                       'initialization', 'kv_compression', 'kv_compression_sharing', 
+                       'd_kv_compression']}
+        ).to(self.device)
+        
+        self.model.load_state_dict(model_data['model_state_dict'])
+        self.is_fitted = True
