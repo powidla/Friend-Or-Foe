@@ -147,15 +147,15 @@ Examples:
     exp_parser.add_argument('--tabnet-patience', type=int, help='TabNet: Early stopping patience')
     
     # FT-Transformer specific parameters
-    exp_parser.add_argument('--ft-n-blocks', type=int, help='FT-Transformer: Number of transformer blocks')
-    exp_parser.add_argument('--ft-n-heads', type=int, help='FT-Transformer: Number of attention heads')
-    exp_parser.add_argument('--ft-d-token', type=int, help='FT-Transformer: Token dimension')
-    exp_parser.add_argument('--ft-attention-dropout', type=float, help='FT-Transformer: Attention dropout')
-    exp_parser.add_argument('--ft-ffn-dropout', type=float, help='FT-Transformer: FFN dropout')
-    exp_parser.add_argument('--ft-lr', type=float, help='FT-Transformer: Learning rate')
-    exp_parser.add_argument('--ft-max-epochs', type=int, help='FT-Transformer: Maximum training epochs')
-    exp_parser.add_argument('--ft-patience', type=int, help='FT-Transformer: Early stopping patience')
-    exp_parser.add_argument('--ft-batch-size', type=int, help='FT-Transformer: Batch size')
+    # exp_parser.add_argument('--ft-n-blocks', type=int, help='FT-Transformer: Number of transformer blocks')
+    # exp_parser.add_argument('--ft-n-heads', type=int, help='FT-Transformer: Number of attention heads')
+    # exp_parser.add_argument('--ft-d-token', type=int, help='FT-Transformer: Token dimension')
+    # exp_parser.add_argument('--ft-attention-dropout', type=float, help='FT-Transformer: Attention dropout')
+    # exp_parser.add_argument('--ft-ffn-dropout', type=float, help='FT-Transformer: FFN dropout')
+    # exp_parser.add_argument('--ft-lr', type=float, help='FT-Transformer: Learning rate')
+    # exp_parser.add_argument('--ft-max-epochs', type=int, help='FT-Transformer: Maximum training epochs')
+    # exp_parser.add_argument('--ft-patience', type=int, help='FT-Transformer: Early stopping patience')
+    # exp_parser.add_argument('--ft-batch-size', type=int, help='FT-Transformer: Batch size')
     
     # # TabM specific parameters
     exp_parser.add_argument('--tabm-lr', type=float, help='TabM: Learning rate')
