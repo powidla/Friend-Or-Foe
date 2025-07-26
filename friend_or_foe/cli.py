@@ -601,7 +601,7 @@ def handle_test_suite(args):
     try:
         from .test import run_all_tests
         
-        success = run_all_tests(quick=args.quick)
+        success = run_all_tests()
         
         if success:
             print("All tests passed!")
