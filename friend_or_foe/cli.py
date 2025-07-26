@@ -599,16 +599,9 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
 def handle_test_suite(args):
     """Handle test suite command."""
     try:
-        from .test import run_all_tests, run_specific_tests
+        from .test import run_all_tests
         
-        if args.models or args.tasks:
-            success = run_specific_tests(
-                models=args.models,
-                tasks=args.tasks,
-                quick=args.quick
-            )
-        else:
-            success = run_all_tests(quick=args.quick)
+        success = run_all_tests(quick=args.quick)
         
         if success:
             print("All tests passed!")
