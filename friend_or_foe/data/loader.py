@@ -15,12 +15,12 @@ import warnings
 
 
 class FriendOrFoeDataLoader:
-    """
+    '''
     Load datasets from the Friend-Or-Foe collection hosted on HuggingFace.
     
     This class provides convenient methods to download and load microbial interaction
     datasets for machine learning research.
-    """
+    '''
     
     REPO_ID = "powidla/Friend-Or-Foe"
     
@@ -42,19 +42,21 @@ class FriendOrFoeDataLoader:
     ]
     
     def __init__(self, cache_dir: Optional[str] = None, verbose: bool = True):
-        """
+        '''
         Initialize the Friend-Or-Foe data loader.
         
         Args:
             cache_dir: Directory to cache downloaded files. If None, uses HuggingFace default.
             verbose: Whether to print progress information.
-        """
+        '''
         self.cache_dir = cache_dir
         self.verbose = verbose
         self._repo_files = None
         
     def _get_repo_files(self) -> List[str]:
-        """Get list of all files in the repository."""
+        '''
+        Get list of all files in the repository.
+        '''
         if self._repo_files is None:
             if self.verbose:
                 print("Fetching repository file list...")
@@ -71,7 +73,7 @@ class FriendOrFoeDataLoader:
     def list_available_datasets(self, task: Optional[str] = None, 
                               collection: Optional[str] = None,
                               group: Optional[str] = None) -> Dict[str, List[str]]:
-        """
+        '''
         List all available datasets with optional filtering.
         
         Args:
@@ -79,9 +81,9 @@ class FriendOrFoeDataLoader:
             collection: Filter by collection ('AGORA' or 'CARVEME')
             group: Filter by group ('50' or '100')
             
-        Returns:
+        Outputs:
             Dictionary mapping dataset identifiers to their file paths
-        """
+        '''
         files = self._get_repo_files()
         datasets = {}
         
@@ -117,7 +119,7 @@ class FriendOrFoeDataLoader:
     
     def load_dataset(self, task: str, collection: str, group: str, 
                     dataset: str, splits: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
-        """
+        '''
         Load a specific dataset with all its splits.
         
         Args:
@@ -127,7 +129,7 @@ class FriendOrFoeDataLoader:
             dataset: Dataset identifier (e.g., 'BC-I', 'GR-III')
             splits: List of splits to load. Default: ['train', 'val', 'test']
             
-        Returns:
+        Outputs:
             Dictionary containing DataFrames for each split and data type
             
         Example:
@@ -135,7 +137,7 @@ class FriendOrFoeDataLoader:
             >>> data = loader.load_dataset('Classification', 'AGORA', '100', 'BC-I')
             >>> X_train = data['X_train']
             >>> y_train = data['y_train']
-        """
+        '''
         # Validate inputs
         if task not in self.TASKS:
             raise ValueError(f"Task must be one of {self.TASKS}")
@@ -185,15 +187,15 @@ class FriendOrFoeDataLoader:
         return data
     
     def load_multiple_datasets(self, configurations: List[Tuple[str, str, str, str]]) -> Dict[str, Dict[str, pd.DataFrame]]:
-        """
+        '''
         Load multiple datasets at once.
         
         Args:
             configurations: List of (task, collection, group, dataset) tuples
             
-        Returns:
+        Outputs:
             Dictionary mapping configuration strings to dataset dictionaries
-        """
+        '''
         all_data = {}
         
         for config in tqdm(configurations, desc="Loading datasets", disable=not self.verbose):
@@ -208,7 +210,7 @@ class FriendOrFoeDataLoader:
         return all_data
     
     def get_dataset_info(self, task: str, collection: str, group: str, dataset: str) -> Dict:
-        """
+        '''
         Get information about a specific dataset without loading it.
         
         Args:
@@ -217,9 +219,9 @@ class FriendOrFoeDataLoader:
             group: Group identifier
             dataset: Dataset identifier
             
-        Returns:
+        Outputs:
             Dictionary with dataset metadata
-        """
+        '''
         try:
             # Load just a small sample to get info
             base_path = f"{task}/{collection}/{group}/{dataset}"
@@ -251,7 +253,7 @@ class FriendOrFoeDataLoader:
     def create_train_test_split(self, data: Dict[str, pd.DataFrame], 
                               test_size: float = 0.2, 
                               random_state: int = 42) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-        """
+        '''
         Create a simple train-test split from loaded data.
         
         Args:
@@ -259,9 +261,9 @@ class FriendOrFoeDataLoader:
             test_size: Proportion of data to use for testing
             random_state: Random seed for reproducibility
             
-        Returns:
+        Outputs:
             Tuple of (X_train, X_test, y_train, y_test)
-        """
+        '''
         from sklearn.model_selection import train_test_split
         
         # Combine train and val data if available
@@ -282,12 +284,12 @@ class FriendOrFoeDataLoader:
         return train_test_split(X, y, test_size=test_size, random_state=random_state)
     
     def download_all_datasets(self, output_dir: str = "FOFdata"):
-        """
+        '''
         Download all datasets and organize them in the expected directory structure.
         
         Args:
             output_dir: Directory to save all datasets
-        """
+        '''
         output_path = Path(output_dir)
         output_path.mkdir(exist_ok=True)
         
@@ -318,7 +320,7 @@ class FriendOrFoeDataLoader:
 # Utility functions
 def quick_load(task: str = "Classification", collection: str = "AGORA", 
                group: str = "100", dataset: str = "BC-I") -> Dict[str, pd.DataFrame]:
-    """
+    '''
     Quick utility function to load a dataset with default parameters.
     
     Args:
@@ -327,19 +329,19 @@ def quick_load(task: str = "Classification", collection: str = "AGORA",
         group: Group identifier (default: '100')
         dataset: Dataset identifier (default: 'BC-I')
         
-    Returns:
+    Outputs:
         Dictionary containing the loaded dataset
-    """
+    '''
     loader = FriendOrFoeDataLoader(verbose=False)
     return loader.load_dataset(task, collection, group, dataset)
 
 
 def list_all_datasets() -> Dict[str, List[str]]:
-    """
+    '''
     Quick utility to list all available datasets.
     
-    Returns:
+    Outputs:
         Dictionary mapping dataset identifiers to file paths
-    """
+    '''
     loader = FriendOrFoeDataLoader(verbose=False)
     return loader.list_available_datasets()
