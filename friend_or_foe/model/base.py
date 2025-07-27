@@ -20,14 +20,16 @@ from rtdl_revisiting_models import FTTransformer
 
 
 class BaseModel(ABC):
-    """
+    '''
     Abstract base class for all Friend-Or-Foe models.
     
-    This class defines the interface that all models should implement.
-    """
+    This class defines all models .
+    '''
     
     def __init__(self, **kwargs):
-        """Initialize the model with given parameters."""
+        '''
+        Initialize the model with given parameters.
+        '''
         self.model = None
         self.is_fitted = False
         self.model_params = kwargs
@@ -37,7 +39,7 @@ class BaseModel(ABC):
     def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame, 
             X_val: Optional[pd.DataFrame] = None, 
             y_val: Optional[pd.DataFrame] = None) -> 'BaseModel':
-        """
+        '''
         Train the model on the given data.
         
         Args:
@@ -46,39 +48,39 @@ class BaseModel(ABC):
             X_val: Validation features (optional)
             y_val: Validation targets (optional)
             
-        Returns:
+        Outputs:
             Self for method chaining
-        """
+        '''
         pass
     
     @abstractmethod
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        """
+        '''
         Make predictions on the given data.
         
         Args:
             X: Features to predict on
             
-        Returns:
+        Outputs:
             Predictions as numpy array
-        """
+        '''
         pass
     
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        """
+        '''
         Predict class probabilities (for classification models).
         
         Args:
             X: Features to predict on
             
-        Returns:
+        Outputs:
             Class probabilities as numpy array
-        """
+        '''
         raise NotImplementedError("predict_proba not implemented for this model")
     
     def evaluate(self, X_test: pd.DataFrame, y_test: pd.DataFrame, 
                 task_type: str = "classification") -> Dict[str, float]:
-        """
+        '''
         Evaluate the model on test data.
         
         Args:
@@ -86,9 +88,9 @@ class BaseModel(ABC):
             y_test: Test targets
             task_type: Type of task ('classification' or 'regression')
             
-        Returns:
+        Outputs:
             Dictionary of evaluation metrics
-        """
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before evaluation")
             
@@ -101,7 +103,9 @@ class BaseModel(ABC):
     
     def _classification_metrics(self, y_true: pd.DataFrame, y_pred: np.ndarray, 
                               X: pd.DataFrame) -> Dict[str, float]:
-        """Calculate classification metrics."""
+        '''
+        Calculate classification metrics.
+        '''
         y_true_flat = y_true.values.flatten() if hasattr(y_true, 'values') else y_true
         
         metrics = {
@@ -109,7 +113,7 @@ class BaseModel(ABC):
             'f1_score': f1_score(y_true_flat, y_pred, average='weighted'),
         }
         
-        # Add AUC if we can get probabilities
+        # Add AUC 
         try:
             y_proba = self.predict_proba(X)
             if y_proba.shape[1] == 2:  # Binary classification
@@ -122,7 +126,9 @@ class BaseModel(ABC):
         return metrics
     
     def _regression_metrics(self, y_true: pd.DataFrame, y_pred: np.ndarray) -> Dict[str, float]:
-        """Calculate regression metrics."""
+        '''
+        Calculate regression metrics.
+        '''
         y_true_flat = y_true.values.flatten() if hasattr(y_true, 'values') else y_true
         
         return {
@@ -132,22 +138,26 @@ class BaseModel(ABC):
         }
     
     def save_model(self, filepath: str):
-        """Save the trained model."""
+        '''
+        Save the trained model.
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
         # Implementation depends on specific model type
         raise NotImplementedError("save_model must be implemented by subclasses")
     
     def load_model(self, filepath: str):
-        """Load a trained model."""
+        '''
+        Load a trained model.
+        '''
         # Implementation depends on specific model type
         raise NotImplementedError("load_model must be implemented by subclasses")
 
 
 class TabNetModel(BaseModel):
-    """
+    '''
     TabNet model implementation for Friend-Or-Foe datasets.
-    """
+    '''
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -159,7 +169,9 @@ class TabNetModel(BaseModel):
             X_val: Optional[pd.DataFrame] = None,
             y_val: Optional[pd.DataFrame] = None,
             task_type: str = "classification") -> 'TabNetModel':
-        """Fit TabNet model."""
+        '''
+        Fit TabNet model.
+        '''
         
         # Prepare data
         X_train_np = X_train.values.astype(np.float32)
@@ -196,7 +208,9 @@ class TabNetModel(BaseModel):
         return self
     
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        """Make predictions with TabNet."""
+        '''
+        Make predictions with TabNet.
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
         
@@ -215,7 +229,9 @@ class TabNetModel(BaseModel):
         return self.model.predict_proba(X_np)
     
     def save_model(self, filepath: str):
-        """Save."""
+        '''
+        Save.
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
         
@@ -230,7 +246,9 @@ class TabNetModel(BaseModel):
             pickle.dump(model_data, f)
     
     def load_model(self, filepath: str):
-        """Load TabNet model."""
+        '''
+        Load TabNet model.
+        '''
         import pickle
         
         with open(filepath, 'rb') as f:
@@ -243,9 +261,9 @@ class TabNetModel(BaseModel):
 
 
 class XGBoostModel(BaseModel):
-    """
+    '''
     XGBoost model implementation for Friend-Or-Foe datasets.
-    """
+    '''
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -270,7 +288,9 @@ class XGBoostModel(BaseModel):
             X_val: Optional[pd.DataFrame] = None,
             y_val: Optional[pd.DataFrame] = None,
             task_type: str = "classification") -> 'XGBoostModel':
-        """Fit XGBoost model."""
+        '''
+        Fit XGBoost model.
+        '''
         
         # Prepare parameters based on task type
         if task_type.lower() == "classification":
@@ -307,14 +327,18 @@ class XGBoostModel(BaseModel):
         return self
     
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        """Make predictions with XGBoost."""
+        '''
+        Make predictions with XGBoost.
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
         
         return self.model.predict(X.values)
     
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        """Predict probabilities with XGBoost (classification only)."""
+        '''
+        Predict probabilities with XGBoost (classification only).
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
         
@@ -455,9 +479,9 @@ class XGBoostModel(BaseModel):
 
 
 class LightGBMModel(BaseModel):
-    """
+    '''
     LightGBM model implementation for Friend-Or-Foe datasets.
-    """
+    '''
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -486,7 +510,9 @@ class LightGBMModel(BaseModel):
             X_val: Optional[pd.DataFrame] = None,
             y_val: Optional[pd.DataFrame] = None,
             task_type: str = "classification") -> 'LightGBMModel':
-        """Fit LightGBM model."""
+        '''
+        Fit LightGBM model.
+        '''
         
         # Prepare parameters based on task type
         if task_type.lower() == "classification":
@@ -505,12 +531,12 @@ class LightGBMModel(BaseModel):
             self.model_params['metric'] = 'rmse'
             self.model = self.lgb.LGBMRegressor(**self.model_params)
         
-        # Prepare validation data
+        # val
         eval_set = None
         if X_val is not None and y_val is not None:
             eval_set = [(X_val.values, y_val.values.flatten())]
         
-        # Fit model
+        # fit
         self.model.fit(
             X_train.values,
             y_train.values.flatten(),
@@ -522,7 +548,9 @@ class LightGBMModel(BaseModel):
         return self
     
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        """Make predictions with LightGBM."""
+        '''
+        Make predictions with LightGBM.
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
         
