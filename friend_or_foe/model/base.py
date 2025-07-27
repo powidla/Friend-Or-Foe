@@ -15,8 +15,13 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, mean_squared_error, r2_score
 import torch
+import pickle
 import warnings
+import shap
+import matplotlib.pyplot as plt
+import catboost as cb
 from rtdl_revisiting_models import FTTransformer
+from .tabm.model import Model
 
 
 class BaseModel(ABC):
@@ -348,7 +353,9 @@ class XGBoostModel(BaseModel):
         return self.model.predict_proba(X.values)
     
     def save_model(self, filepath: str):
-        """Save XGBoost model."""
+        '''
+        Save XGBoost model.
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
         
@@ -366,7 +373,9 @@ class XGBoostModel(BaseModel):
                 pickle.dump(model_data, f)
     
     def load_model(self, filepath: str):
-        """Load XGBoost model."""
+        '''
+        Load XGBoost model.
+        '''
         if filepath.endswith('.json'):
             # Load using XGBoost's native format
             # Need to recreate model with correct type
@@ -385,7 +394,9 @@ class XGBoostModel(BaseModel):
         
         self.is_fitted = True
     def get_feature_importance(self, importance_type: str = "gain") -> pd.DataFrame:
-        """Get feature importance from XGBoost."""
+        '''
+        Get feature importance from XGBoost.
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before getting feature importance")
         
@@ -400,7 +411,7 @@ class XGBoostModel(BaseModel):
     def shap_analysis(self, X_background: pd.DataFrame, X_explain: pd.DataFrame, 
                      plot_type: str = "summary", max_display: int = 20, 
                      save_path: Optional[str] = None) -> Dict[str, Any]:
-        """
+        '''
         Perform SHAP analysis for XGBoost model.
         
         Args:
@@ -410,9 +421,9 @@ class XGBoostModel(BaseModel):
             max_display: Maximum number of features to display
             save_path: Path to save the plot
             
-        Returns:
+        Outputs:
             Dictionary containing SHAP values and explainer
-        """
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before SHAP analysis")
         
@@ -557,7 +568,9 @@ class LightGBMModel(BaseModel):
         return self.model.predict(X.values)
     
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        """Predict probabilities with LightGBM (classification only)."""
+        '''
+        Predict probabilities with LightGBM (classification only).
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
         
@@ -567,7 +580,9 @@ class LightGBMModel(BaseModel):
         return self.model.predict_proba(X.values)
     
     def save_model(self, filepath: str):
-        """Save LightGBM model."""
+        '''
+        Save LightGBM model.
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
         
@@ -585,7 +600,9 @@ class LightGBMModel(BaseModel):
                 pickle.dump(model_data, f)
     
     def load_model(self, filepath: str):
-        """Load LightGBM model."""
+        '''
+        Load LightGBM model.
+        '''
         if filepath.endswith('.txt'):
             # Load using LightGBM's native format
             if 'Classifier' in str(type(self.model)) or self.model_params.get('objective') in ['binary', 'multiclass']:
@@ -603,7 +620,9 @@ class LightGBMModel(BaseModel):
         
         self.is_fitted = True
     def get_feature_importance(self, importance_type: str = "split") -> pd.DataFrame:
-        """Get feature importance from LightGBM."""
+        '''
+        Get feature importance from LightGBM.
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before getting feature importance")
         
@@ -618,7 +637,7 @@ class LightGBMModel(BaseModel):
     def shap_analysis(self, X_background: pd.DataFrame, X_explain: pd.DataFrame, 
                      plot_type: str = "summary", max_display: int = 20, 
                      save_path: Optional[str] = None) -> Dict[str, Any]:
-        """
+        '''
         Perform SHAP analysis for LightGBM model.
         
         Args:
@@ -628,9 +647,9 @@ class LightGBMModel(BaseModel):
             max_display: Maximum number of features to display
             save_path: Path to save the plot
             
-        Returns:
+        Outputs:
             Dictionary containing SHAP values and explainer
-        """
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before SHAP analysis")
         
@@ -698,9 +717,9 @@ class LightGBMModel(BaseModel):
 
 
 class CatBoostModel(BaseModel):
-    """
+    '''
     CatBoost model implementation for Friend-Or-Foe datasets.
-    """
+    '''
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -723,7 +742,9 @@ class CatBoostModel(BaseModel):
             X_val: Optional[pd.DataFrame] = None,
             y_val: Optional[pd.DataFrame] = None,
             task_type: str = "classification") -> 'CatBoostModel':
-        """Fit CatBoost model."""
+        '''
+        Fit CatBoost model.
+        '''
         
         if task_type.lower() == "classification":
             self.model = self.cb.CatBoostClassifier(**self.model_params)
@@ -747,14 +768,18 @@ class CatBoostModel(BaseModel):
         return self
     
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        """Make predictions with CatBoost."""
+        '''
+        Make predictions with CatBoost.
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
         
         return self.model.predict(X.values)
     
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        """Predict probabilities with CatBoost (classification only)."""
+        '''
+        Predict probabilities with CatBoost (classification only).
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
         
@@ -764,7 +789,9 @@ class CatBoostModel(BaseModel):
         return self.model.predict_proba(X.values)
     
     def save_model(self, filepath: str):
-        """Save CatBoost model."""
+        '''
+        Save CatBoost model.
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
         
@@ -772,7 +799,9 @@ class CatBoostModel(BaseModel):
         self.model.save_model(filepath)
     
     def load_model(self, filepath: str):
-        """Load CatBoost model."""
+        '''
+        Load CatBoost model.
+        '''
         # CatBoost requires us to know the model type beforehand
         # Try to infer from filepath or use a default
         try:
@@ -787,7 +816,9 @@ class CatBoostModel(BaseModel):
         
         self.is_fitted = True
     def get_feature_importance(self) -> pd.DataFrame:
-        """Get feature importance from CatBoost."""
+        '''
+        Get feature importance from CatBoost.
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before getting feature importance")
         
@@ -802,7 +833,7 @@ class CatBoostModel(BaseModel):
     def shap_analysis(self, X_background: pd.DataFrame, X_explain: pd.DataFrame, 
                      plot_type: str = "summary", max_display: int = 20, 
                      save_path: Optional[str] = None) -> Dict[str, Any]:
-        """
+        '''
         Perform SHAP analysis for CatBoost model.
         
         Args:
@@ -812,9 +843,9 @@ class CatBoostModel(BaseModel):
             max_display: Maximum number of features to display
             save_path: Path to save the plot
             
-        Returns:
+        Outputs:
             Dictionary containing SHAP values and explainer
-        """
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before SHAP analysis")
         
@@ -880,10 +911,11 @@ class CatBoostModel(BaseModel):
         }
 
 class FTTransformerModel(BaseModel):
-    """
+    '''
     FT-Transformer model implementation using rtdl_revisiting_models package.
+    https://github.com/yandex-research/rtdl
     Uses default parameters only, following the standard usage pattern.
-    """
+    '''
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1119,7 +1151,9 @@ class FTTransformerModel(BaseModel):
         return self
     
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        """Make predictions with FT-Transformer."""
+        '''
+        Make predictions with FT-Transformer.
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
         
@@ -1213,7 +1247,9 @@ class FTTransformerModel(BaseModel):
         torch.save(model_data, filepath)
     
     def load_model(self, filepath: str):
-        """Load FT-Transformer model."""
+        '''
+        Load FT-Transformer model.
+        '''
         import torch
         from rtdl_revisiting_models import FTTransformer
         
@@ -1243,9 +1279,10 @@ class FTTransformerModel(BaseModel):
         self.is_fitted = True
 
 class TabMModel(BaseModel):
-    """
+    '''
     TabM model implementation using the official TabM code.
-    """
+    https://github.com/yandex-research/tabm
+    '''
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1274,7 +1311,9 @@ class TabMModel(BaseModel):
             X_val: Optional[pd.DataFrame] = None,
             y_val: Optional[pd.DataFrame] = None,
             task_type: str = "classification") -> 'TabMModel':
-        """Fit TabM model using the official implementation."""
+        '''
+        Fit TabM model using the official implementation.
+        '''
         
         try:
             import torch
@@ -1287,7 +1326,7 @@ class TabMModel(BaseModel):
             import math
             import random
             
-            # Import TabM modules from the model directory
+            # Import tbm
             from .tabm.model import Model, make_parameter_groups
             
         except ImportError:
@@ -1530,7 +1569,9 @@ class TabMModel(BaseModel):
         return self
     
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        """Make predictions with TabM."""
+        '''
+        Make predictions with TabM.
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
         
@@ -1596,7 +1637,9 @@ class TabMModel(BaseModel):
         return y_pred.mean(1)
     
     def save_model(self, filepath: str):
-        """Save TabM model."""
+        '''
+        Save TabM model.
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
         
@@ -1617,10 +1660,10 @@ class TabMModel(BaseModel):
         torch.save(model_data, filepath)
     
     def load_model(self, filepath: str):
-        """Load TabM model."""
-        import torch
-        from .tabm.model import Model
-        
+        '''
+        Load TabM model.
+        '''
+    
         model_data = torch.load(filepath, map_location='cpu')
         
         self.model_params = model_data['model_params']
