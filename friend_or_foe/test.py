@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Tests all models with synthetic data to ensure everything works properly.
+Tests all models and loading data.
+So far basic functions work.
 """
 
 import os
@@ -32,7 +33,9 @@ except ImportError as e:
 
 
 class TestColors:
-    """ANSI color codes for test output."""
+    '''
+    ANSI color codes for test output.
+    '''
     GREEN = '\033[92m'
     RED = '\033[91m'
     YELLOW = '\033[93m'
@@ -45,36 +48,46 @@ class TestColors:
 
 
 def print_test_header(message: str):
-    """Print a formatted test header."""
+    '''
+    Print a formatted test header.
+    '''
     print(f"\n{TestColors.BOLD}{TestColors.BLUE}{'='*60}")
     print(f"{message}")
     print(f"{'='*60}{TestColors.END}")
 
 
 def print_success(message: str):
-    """Print success message."""
+    '''
+    Print success message.
+    '''
     print(f"{TestColors.GREEN} {message}{TestColors.END}")
 
 
 def print_error(message: str):
-    """Print error message."""
+    '''
+    Print error message.
+    '''
     print(f"{TestColors.RED} {message}{TestColors.END}")
 
 
 def print_warning(message: str):
-    """Print warning message."""
+    '''
+    Print warning message.
+    '''
     print(f"{TestColors.YELLOW}  {message}{TestColors.END}")
 
 
 def print_info(message: str):
-    """Print info message."""
+    '''
+    Print info message.
+    '''
     print(f"{TestColors.CYAN} {message}{TestColors.END}")
 
 
 def create_synthetic_dataset(n_samples: int = 1000, n_features: int = 20, 
                            task_type: str = "classification", 
                            n_classes: int = 2) -> Dict[str, pd.DataFrame]:
-    """
+    '''
     Create synthetic dataset for testing.
     
     Args:
@@ -85,7 +98,7 @@ def create_synthetic_dataset(n_samples: int = 1000, n_features: int = 20,
     
     Returns:
         Dictionary with train/val/test splits
-    """
+    '''
     np.random.seed(42)
     
     # Generate features
@@ -100,16 +113,16 @@ def create_synthetic_dataset(n_samples: int = 1000, n_features: int = 20,
         if n_classes == 2:
             y = (probabilities > 0.5).astype(int)
         else:
-            # Multi-class: use softmax
+            # Softmax
             logits = np.random.randn(n_samples, n_classes)
             y = np.argmax(logits, axis=1)
     else:
-        # Create regression target
+        # Regression
         weights = np.random.randn(n_features)
         noise = np.random.randn(n_samples) * 0.1
         y = X @ weights + noise
     
-    # Convert to DataFrames
+    # Conver
     feature_names = [f"feature_{i}" for i in range(n_features)]
     X_df = pd.DataFrame(X, columns=feature_names)
     y_df = pd.DataFrame(y, columns=['target'])
@@ -129,7 +142,7 @@ def create_synthetic_dataset(n_samples: int = 1000, n_features: int = 20,
 
 
 def test_model_interface(model_class, model_name: str, task_type: str = "classification") -> bool:
-    """
+    '''
     Test basic model interface (fit, predict, evaluate).
     
     Args:
@@ -139,7 +152,7 @@ def test_model_interface(model_class, model_name: str, task_type: str = "classif
     
     Returns:
         True if all tests pass, False otherwise
-    """
+    '''
     print_info(f"Testing {model_name} interface...")
     
     try:
@@ -210,7 +223,7 @@ def test_model_interface(model_class, model_name: str, task_type: str = "classif
 
 
 def test_model_save_load(model_class, model_name: str, task_type: str = "classification") -> bool:
-    """
+    '''
     Test model save/load functionality.
     
     Args:
@@ -220,7 +233,7 @@ def test_model_save_load(model_class, model_name: str, task_type: str = "classif
     
     Returns:
         True if save/load works, False otherwise
-    """
+    '''
     print_info(f"Testing {model_name} save/load...")
     
     try:
@@ -286,7 +299,7 @@ def test_model_save_load(model_class, model_name: str, task_type: str = "classif
 
 
 def test_tree_model_shap(model_class, model_name: str) -> bool:
-    """
+    '''
     Test SHAP analysis for tree-based models.
     
     Args:
@@ -295,7 +308,7 @@ def test_tree_model_shap(model_class, model_name: str) -> bool:
     
     Returns:
         True if SHAP analysis works, False otherwise
-    """
+    '''
     print_info(f"Testing {model_name} SHAP analysis...")
     
     try:
@@ -337,7 +350,9 @@ def test_tree_model_shap(model_class, model_name: str) -> bool:
 
 
 def test_data_loader() -> bool:
-    """Test the data loader functionality."""
+    '''
+    Test the data loader functionality.
+    '''
     print_info("Testing FriendOrFoeDataLoader...")
     
     try:
@@ -364,12 +379,12 @@ def test_data_loader() -> bool:
 
 
 def run_all_tests() -> bool:
-    """
+    '''
     Run comprehensive test suite for all models.
     
     Returns:
         True if all tests pass, False otherwise
-    """
+    '''
     print_test_header("FRIEND-OR-FOE COMPREHENSIVE TEST SUITE")
     
     # Test configuration
@@ -450,7 +465,9 @@ def run_all_tests() -> bool:
 
 
 def main():
-    """Main test execution."""
+    '''
+    Main tests.
+    '''
     try:
         success = run_all_tests()
         sys.exit(0 if success else 1)
