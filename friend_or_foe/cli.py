@@ -15,12 +15,14 @@ from .model.base import TabNetModel, XGBoostModel, LightGBMModel, CatBoostModel,
 
 
 def main():
-    """Main CLI entry point for Friend-Or-Foe package."""
+    '''
+    Main CLI entry point for Friend-Or-Foe package.
+    '''
     parser = argparse.ArgumentParser(
         description="Friend-Or-Foe: Microbial Interaction Dataset Tools",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
+Examples to use:
   # List available datasets
   friend-or-foe list-datasets
   
@@ -221,7 +223,6 @@ def parse_model_parameters(args):
                 with open(args.params, 'r') as f:
                     custom_params = json.load(f)
             else:
-                # Parse as JSON string
                 custom_params = json.loads(args.params)
         except (json.JSONDecodeError, FileNotFoundError) as e:
             print(f"Warning: Could not parse custom parameters: {e}")
@@ -230,7 +231,7 @@ def parse_model_parameters(args):
     if args.random_state is not None:
         custom_params['random_state'] = args.random_state
     
-    # Model-specific parameters (CLI args override JSON params)
+    # Model-specific parameters 
     if args.model == 'xgboost':
         xgb_params = {}
         if args.xgb_n_estimators is not None:
@@ -457,7 +458,9 @@ def handle_download_all(loader: FriendOrFoeDataLoader, args):
 
 
 def handle_info(loader: FriendOrFoeDataLoader, args):
-    """Handle info command."""
+    '''
+    Handle info command.
+    '''
     info = loader.get_dataset_info(args.task, args.collection, args.group, args.dataset)
     
     if 'error' in info:
@@ -483,7 +486,9 @@ def handle_info(loader: FriendOrFoeDataLoader, args):
 
 
 def handle_experiment(loader: FriendOrFoeDataLoader, args):
-    """Handle experiment command with custom model parameters."""
+    '''
+    Handle experiment command with custom model parameters.
+    '''
     print(f"Running experiment with {args.model} on {args.task}/{args.collection}/{args.group}/{args.dataset}")
     
     # Parse model parameters
@@ -596,7 +601,9 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     return model, metrics
 
 def handle_test_suite(args):
-    """Handle test suite command."""
+    '''
+    Handle test suite command.
+    '''
     try:
         from .test import run_all_tests
         
@@ -615,7 +622,9 @@ def handle_test_suite(args):
         sys.exit(1)
 
 def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
-    """Handle SHAP analysis command."""
+    '''
+    Handle SHAP analysis command.
+    '''
     print(f"Performing SHAP analysis on {args.model_type} model")
     print(f"Model path: {args.model_path}")
     
@@ -631,7 +640,7 @@ def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
     # Combine train and validation data for background
     X_background = pd.concat([data['X_train'], data['X_val']], ignore_index=True)
     
-    # Use test data for explanation (sample if too large)
+    # Use test data
     X_explain = data['X_test']
     if len(X_explain) > args.sample_size:
         X_explain = X_explain.sample(n=args.sample_size, random_state=42)
@@ -696,7 +705,7 @@ def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
     except Exception as e:
         print(f"Could not get native feature importance: {e}")
     
-    # Save results if save path is provided
+    # Save 
     if args.save_path:
         print(f"\n Saving results...")
         
@@ -714,7 +723,7 @@ def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
         except:
             pass
         
-        # Save analysis metadata
+        # Save metadata
         metadata = {
             'model_type': args.model_type,
             'model_path': args.model_path,
