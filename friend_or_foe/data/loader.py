@@ -1,7 +1,8 @@
 """
 Friend-Or-Foe Data Loader Module
 
-This module provides utilities for loading and managing the Friend-Or-Foe microbial datasets.
+This module provides utilities for loading and managing the Friend-Or-Foe datasets
+from the offiical Hugging Face repo: https://huggingface.co/datasets/powidla/Friend-Or-Foe.
 """
 
 import pandas as pd
@@ -21,7 +22,8 @@ class FriendOrFoeDataLoader:
     This class provides convenient methods to download and load microbial interaction
     datasets for machine learning research.
     '''
-    
+
+    # the repo id
     REPO_ID = "powidla/Friend-Or-Foe"
     
     # Available configurations
