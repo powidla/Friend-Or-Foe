@@ -149,3 +149,22 @@ We provide a basic example of usage in a [notebook](https://github.com/powidla/F
 
 # License
 FriendOrFoe is under the Apache 2.0 license for code found on the associated GitHub repo and for the data hosted on HuggingFace. The LICENSE file for the repo can be found in the top-level directory.
+
+# Citations
+If you find this repository usefull please cite the following papers
+
+@ARTICLE{Solowiej-Wedderburn2025-ar,
+  title     = "Competition and cooperation: The plasticity of bacterial
+               interactions across environments",
+  author    = "Solowiej-Wedderburn, Josephine and Pentz, Jennifer T and Lizana,
+               Ludvig and Schroeder, Bjoern O and Lind, Peter A and Libby, Eric",
+  journal   = "PLoS Comput. Biol.",
+  publisher = "Public Library of Science (PLoS)",
+  volume    =  21,
+  number    =  7,
+  pages     = "e1013213",
+  month     =  jul,
+  year      =  2025,
+  copyright = "http://creativecommons.org/licenses/by/4.0/",
+  language  = "en"
+}
