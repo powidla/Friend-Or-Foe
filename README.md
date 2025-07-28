@@ -152,8 +152,8 @@ FriendOrFoe is under the Apache 2.0 license for code found on the associated Git
 
 # Citations
 If you find this repository usefull please cite the following papers
-
-@ARTICLE{Solowiej-Wedderburn2025-ar,
+$$
+@article{Solowiej-Wedderburn2025-ar,
   title     = "Competition and cooperation: The plasticity of bacterial
                interactions across environments",
   author    = "Solowiej-Wedderburn, Josephine and Pentz, Jennifer T and Lizana,
@@ -168,3 +168,4 @@ If you find this repository usefull please cite the following papers
   copyright = "http://creativecommons.org/licenses/by/4.0/",
   language  = "en"
 }
+$$
