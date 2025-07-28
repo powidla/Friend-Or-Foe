@@ -150,9 +150,9 @@ We provide a basic example of usage in a [notebook](https://github.com/powidla/F
 # License
 FriendOrFoe is under the Apache 2.0 license for code found on the associated GitHub repo and for the data hosted on HuggingFace. The LICENSE file for the repo can be found in the top-level directory.
 
-# Citations
+# Citation Information
 If you find this repository usefull please cite the following papers
-$$
+<pre>
 @article{Solowiej-Wedderburn2025-ar,
   title     = "Competition and cooperation: The plasticity of bacterial
                interactions across environments",
@@ -168,4 +168,4 @@ $$
   copyright = "http://creativecommons.org/licenses/by/4.0/",
   language  = "en"
 }
-$$
+</pre>
