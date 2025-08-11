@@ -14,6 +14,7 @@
 - examples: provides notebooks with examples on various tasks
 - exp: stores `````.json````` files with final metrics
 - models: contains codes, environments and `````.json````` files for the experiments
+- friend_or_foe: contains source code
 
 # Getting started
 Download the package via PyPi
@@ -35,7 +36,9 @@ for name in list(datasets.keys()):
     print(f"  --- {name}")
 
 `````
+We also provide an [example notebook](https://github.com/powidla/Friend-Or-Foe/blob/main/Quick_example_Friend_or_Foe.ipynb) with basic cli for analyses.
 
+Alternatively, you may download the data directly through Hugging Face hub loader.
 Download the data from our HugginFace repo: https://huggingface.co/datasets/powidla/Friend-Or-Foe
 `````python
 from huggingface_hub import hf_hub_download
