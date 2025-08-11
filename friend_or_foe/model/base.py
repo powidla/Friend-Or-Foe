@@ -1269,7 +1269,7 @@ class FTTransformerModel(BaseModel):
         import torch
         from rtdl_revisiting_models import FTTransformer
         
-        model_data = torch.load(filepath, map_location='cpu')
+        model_data = torch.load(filepath, map_location='cpu', weights_only=False)
         
         self.model_params = model_data['model_params']
         self.training_history = model_data['training_history']
@@ -1680,7 +1680,7 @@ class TabMModel(BaseModel):
         Load TabM model.
         '''
     
-        model_data = torch.load(filepath, map_location='cpu')
+        model_data = torch.load(filepath, map_location='cpu', weights_only=False)
         
         self.model_params = model_data['model_params']
         self.training_history = model_data['training_history']
