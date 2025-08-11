@@ -16,6 +16,26 @@
 - models: contains codes, environments and `````.json````` files for the experiments
 
 # Getting started
+Download the package via PyPi
+`````bash
+pip install friend_or_foe
+`````
+
+Basic example of loading through the package
+`````python
+# import FriendOrFoe loader
+from friend_or_foe.data.loader import FriendOrFoeDataLoader
+
+# create FriendOrFoe loader
+loader = FriendOrFoeDataLoader(verbose=True)
+
+# print available datasets
+datasets = loader.list_available_datasets()
+for name in list(datasets.keys()): 
+    print(f"  --- {name}")
+
+`````
+
 Download the data from our HugginFace repo: https://huggingface.co/datasets/powidla/Friend-Or-Foe
 `````python
 from huggingface_hub import hf_hub_download
