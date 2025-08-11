@@ -174,18 +174,26 @@ class TabNetModel(BaseModel):
             X_val: Optional[pd.DataFrame] = None,
             y_val: Optional[pd.DataFrame] = None,
             task_type: str = "classification") -> 'TabNetModel':
-        '''
-        Fit TabNet model.
-        '''
         
         # Prepare data
         X_train_np = X_train.values.astype(np.float32)
-        y_train_np = y_train.values.flatten()
+        y_train_np = y_train.values
+        if task_type.lower() == "regression":
+            # Ensure 2D for regression
+            if y_train_np.ndim == 1:
+                y_train_np = y_train_np.reshape(-1, 1)
+        else:
+            y_train_np = y_train_np.flatten()
         
         eval_set = None
         if X_val is not None and y_val is not None:
             X_val_np = X_val.values.astype(np.float32)
-            y_val_np = y_val.values.flatten()
+            y_val_np = y_val.values
+            if task_type.lower() == "regression":
+                if y_val_np.ndim == 1:
+                    y_val_np = y_val_np.reshape(-1, 1)
+            else:
+                y_val_np = y_val_np.flatten()
             eval_set = [(X_val_np, y_val_np)]
         
         # Initialize model
@@ -234,21 +242,23 @@ class TabNetModel(BaseModel):
         return self.model.predict_proba(X_np)
     
     def save_model(self, filepath: str):
-        '''
-        Save.
-        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
         
         import pickle
-        model_data = {
-            'model': self.model,
-            'model_params': self.model_params,
-            'training_history': self.training_history
-        }
+        import threading
         
-        with open(filepath, 'wb') as f:
-            pickle.dump(model_data, f)
+        # Use threading lock to prevent conflicts
+        lock = threading.Lock()
+        with lock:
+            model_data = {
+                'model': self.model,
+                'model_params': self.model_params,
+                'training_history': self.training_history
+            }
+            
+            with open(filepath, 'wb') as f:
+                pickle.dump(model_data, f)
     
     def load_model(self, filepath: str):
         '''
@@ -546,13 +556,16 @@ class LightGBMModel(BaseModel):
         eval_set = None
         if X_val is not None and y_val is not None:
             eval_set = [(X_val.values, y_val.values.flatten())]
-        
+            
+        callbacks = [self.lgb.log_evaluation(0)]
+        if eval_set is not None:
+            callbacks.append(self.lgb.early_stopping(50))
         # fit
         self.model.fit(
             X_train.values,
             y_train.values.flatten(),
             eval_set=eval_set,
-            callbacks=[self.lgb.early_stopping(50), self.lgb.log_evaluation(0)]
+            callbacks=callbacks
         )
         
         self.is_fitted = True
@@ -722,19 +735,21 @@ class CatBoostModel(BaseModel):
     '''
     
     def __init__(self, **kwargs):
+        # Handle parameter mapping BEFORE calling super().__init__
+        if 'n_estimators' in kwargs:
+            kwargs['iterations'] = kwargs.pop('n_estimators')
+        
         super().__init__(**kwargs)
         import catboost as cb
         self.cb = cb
-
-        if 'n_estimators' in kwargs:
-            kwargs['iterations'] = kwargs.pop('n_estimators')
-        # Set default parameters
         
+        # Set default parameters
         default_params = {
             'iterations': 100,
             'learning_rate': 0.1,
             'depth': 6,
-            'verbose': False
+            'verbose': False,
+            'random_state': 42
         }
         
         for key, value in default_params.items():
