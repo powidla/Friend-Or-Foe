@@ -1,0 +1,96 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "friend-or-foe"
+version = "1.0.0"
+description = "A collection of microbial datasets obtained from metabolic modeling for machine learning research"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "powidla", email = "poowidla123@gmail.com"},
+]
+maintainers = [
+    {name = "powidla", email = "poowidla123@gmail.com"},
+]
+keywords = ["microbiology", "machine-learning", "metabolic-modeling", "bioinformatics", "datasets"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License", 
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.9"
+
+dependencies = [
+    "tqdm==4.67.1",
+    "rtdl-num-embeddings>=0.0.11", 
+    "scikit-learn==1.6.1",
+    "scipy==1.15.2",
+    "pandas==2.2.3",
+    "numpy==2.1.2",
+    "matplotlib==3.10.1",
+    "requests==2.32.3",
+    "pytorch-tabnet==4.1.0",
+    "huggingface_hub>=0.20.0",
+    "delu>=0.0.26",
+    "rtdl_revisiting_models>=0.0.2",
+    "shap>=0.41.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0",
+]
+docs = [
+    "sphinx>=6.0.0",
+    "sphinx-rtd-theme>=1.2.0",
+    "nbsphinx>=0.9.0",
+]
+jupyter = [
+    "jupyter>=1.0.0",
+    "ipykernel>=6.0.0",
+    "notebook>=6.5.0",
+]
+all = [
+    "friend-or-foe[dev,docs,jupyter]",
+]
+
+[project.urls]
+Homepage = "https://github.com/powidla/Friend-Or-Foe"
+Documentation = "https://elibbylab.github.io/Friend-Or-Foe/"
+Repository = "https://github.com/powidla/Friend-Or-Foe"
+"Bug Tracker" = "https://github.com/powidla/Friend-Or-Foe/issues"
+"Data Repository" = "https://huggingface.co/datasets/powidla/Friend-Or-Foe"
+
+[project.scripts]
+friend-or-foe = "friend_or_foe.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["friend_or_foe*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
