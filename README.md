@@ -36,14 +36,27 @@ for name in list(datasets.keys()):
     print(f"  --- {name}")
 
 `````
-Loading a specific dataset BC-I from the $$\texttt{Agora}$$ collection
+Loading a specific dataset $$\texttt{BC-I}$$ from the AGORA collection
 `````python
 from friend_or_foe.data.loader import FriendOrFoeDataLoader
 loader = FriendOrFoeDataLoader()
 data = loader.load_dataset('Classification', 'AGORA', '100', 'BC-I')
 `````
+Training a TabM model
+`````python
+from friend_or_foe.model.base import TabMModel
+model = TabMModel(max_epochs=2, patience=1, batch_size=64, k=4, d_block=32)
+task_type = 'classification'
+model.fit(
+    data['X_train'], 
+    data['y_train'], 
+    data['X_val'], 
+    data['y_val'], 
+    task_type=task_type
+)
+`````
 
-We also provide an [example notebook](https://github.com/powidla/Friend-Or-Foe/blob/main/Quick_example_Friend_or_Foe.ipynb) with basic cli for analyses.
+We also provide an [example notebook](https://github.com/powidla/Friend-Or-Foe/blob/main/Quick_example_Friend_or_Foe.ipynb) with basic cli for comprehensive analyses.
 
 Alternatively, you may download the data directly through Hugging Face hub loader.
 Download the data from our HugginFace repo: https://huggingface.co/datasets/powidla/Friend-Or-Foe
