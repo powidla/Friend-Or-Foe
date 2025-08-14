@@ -22,7 +22,7 @@ Download the package via PyPi
 pip install friend_or_foe
 `````
 
-Basic example of loading through the package
+Basic example of loading through the package and listing all the datasets from the compendium
 `````python
 # import FriendOrFoe loader
 from friend_or_foe.data.loader import FriendOrFoeDataLoader
@@ -36,6 +36,13 @@ for name in list(datasets.keys()):
     print(f"  --- {name}")
 
 `````
+Loading a specific dataset BC-I from the \texttt{Agora} collection
+`````python
+from friend_or_foe.data.loader import FriendOrFoeDataLoader
+loader = FriendOrFoeDataLoader()
+data = loader.load_dataset('Classification', 'AGORA', '100', 'BC-I')
+`````
+
 We also provide an [example notebook](https://github.com/powidla/Friend-Or-Foe/blob/main/Quick_example_Friend_or_Foe.ipynb) with basic cli for analyses.
 
 Alternatively, you may download the data directly through Hugging Face hub loader.
