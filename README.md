@@ -36,7 +36,7 @@ for name in list(datasets.keys()):
     print(f"  --- {name}")
 
 `````
-Loading a specific dataset BC-I from the \texttt{Agora} collection
+Loading a specific dataset BC-I from the $$\texttt{Agora}$$ collection
 `````python
 from friend_or_foe.data.loader import FriendOrFoeDataLoader
 loader = FriendOrFoeDataLoader()
