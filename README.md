@@ -59,7 +59,7 @@ model.fit(
 We also provide an [example notebook](https://github.com/powidla/Friend-Or-Foe/blob/main/Quick_example_Friend_or_Foe.ipynb) with basic cli for comprehensive analyses.
 
 Alternatively, you may download the data directly through Hugging Face hub loader.
-Download the data from our HugginFace repo: https://huggingface.co/datasets/powidla/Friend-Or-Foe
+Download the data from our Hugging Face repo: https://huggingface.co/datasets/powidla/Friend-Or-Foe
 `````python
 from huggingface_hub import hf_hub_download
 import pandas as pd
