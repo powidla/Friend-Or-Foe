@@ -17,7 +17,7 @@
 - friend_or_foe: contains source code
 
 # Getting started
-Download the package via PyPi
+Download the package via PyPi manager
 `````bash
 pip install friend_or_foe
 `````
