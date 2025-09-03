@@ -209,6 +209,8 @@ If you find this repository usefull for your research, please cite the following
   copyright = "http://creativecommons.org/licenses/by/4.0/",
   language  = "en"
 }
+</pre>
+</pre>
 @misc{cherendichenko2025friendfoe,
   title={Friend or Foe}, 
   author={Oleksandr Cherendichenko and Josephine Solowiej-Wedderburn and Laura M. Carroll and Eric Libby},
