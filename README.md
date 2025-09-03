@@ -191,7 +191,7 @@ python main.py --dataname GenAGORA50 --mode test --report --no_wandb
 FriendOrFoe is under the Apache 2.0 license for code found on the associated GitHub repo and for the data hosted on HuggingFace. The LICENSE file for the repo can be found in the top-level directory.
 
 # Citation Information
-If you find this repository usefull for your research, please cite the following paper
+If you find this repository usefull for your research, please cite the following papers
 <pre>
 @article{Solowiej-Wedderburn2025-ar,
   title     = "Competition and cooperation: The plasticity of bacterial
@@ -207,5 +207,14 @@ If you find this repository usefull for your research, please cite the following
   year      =  2025,
   copyright = "http://creativecommons.org/licenses/by/4.0/",
   language  = "en"
+}
+@misc{cherendichenko2025friendfoe,
+  title={Friend or Foe}, 
+  author={Oleksandr Cherendichenko and Josephine Solowiej-Wedderburn and Laura M. Carroll and Eric Libby},
+  year={2025},
+  eprint={2509.00123},
+  archivePrefix={arXiv},
+  primaryClass={q-bio.QM},
+  url={https://arxiv.org/abs/2509.00123}, 
 }
 </pre>
