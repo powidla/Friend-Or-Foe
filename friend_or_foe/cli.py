@@ -9,10 +9,10 @@ import sys
 from pathlib import Path
 import json
 import pandas as pd
-
+import time
 from .data.loader import FriendOrFoeDataLoader
 from .model.base import TabNetModel, XGBoostModel, LightGBMModel, CatBoostModel, FTTransformerModel, TabMModel
-
+from .test import run_all_tests
 
 def main():
     '''
@@ -537,7 +537,6 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     
     # Train mode
     print("Training model...")
-    import time
     start_time = time.time()
     
     if args.model == 'tabnet' and fit_params:
@@ -605,7 +604,6 @@ def handle_test_suite(args):
     Handle test suite command.
     '''
     try:
-        from .test import run_all_tests
         
         success = run_all_tests()
         
