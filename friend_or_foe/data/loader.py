@@ -10,6 +10,7 @@ import numpy as np
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 from huggingface_hub import hf_hub_download, list_repo_files
+from sklearn.model_selection import train_test_split
 import requests
 from tqdm import tqdm
 import warnings
@@ -266,9 +267,6 @@ class FriendOrFoeDataLoader:
         Outputs:
             Tuple of (X_train, X_test, y_train, y_test)
         '''
-        from sklearn.model_selection import train_test_split
-        
-        # Combine train and val data if available
         X_combined = []
         y_combined = []
         
