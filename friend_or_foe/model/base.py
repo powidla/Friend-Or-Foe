@@ -1,4 +1,3 @@
-
 """
 Friend-Or-Foe package base functions.
 Currently supports loading data from hugging face repo: https://huggingface.co/datasets/powidla/Friend-Or-Foe
@@ -13,28 +12,35 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, Tuple
 import pandas as pd
 import numpy as np
-from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, mean_squared_error, r2_score
 import torch
 import pickle
 import warnings
 import shap
+import threading
 import matplotlib.pyplot as plt
+import lightgbm as lgb
 import catboost as cb
+import xgboost as xgb
 from rtdl_revisiting_models import FTTransformer
-from .tabm.model import Model
-
+from pytorch_tabnet.tab_model import TabNetClassifier, TabNetRegressor
+import torch.nn.functional as F
+import delu
+import scipy.special
+import sklearn.metrics
+import sklearn.preprocessing
+from tqdm import tqdm
+import math
+import random
+# Import tabm
+from .tabm.model import Model, make_parameter_groups
 
 class BaseModel(ABC):
     '''
     Abstract base class for all Friend-Or-Foe models.
-    
     This class defines all models .
     '''
     
     def __init__(self, **kwargs):
-        '''
-        Initialize the model with given parameters.
-        '''
         self.model = None
         self.is_fitted = False
         self.model_params = kwargs
@@ -148,7 +154,6 @@ class BaseModel(ABC):
         '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
-        # Implementation depends on specific model type
         raise NotImplementedError("save_model must be implemented by subclasses")
     
     def load_model(self, filepath: str):
@@ -166,7 +171,6 @@ class TabNetModel(BaseModel):
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        from pytorch_tabnet.tab_model import TabNetClassifier, TabNetRegressor
         self.TabNetClassifier = TabNetClassifier
         self.TabNetRegressor = TabNetRegressor
         
@@ -231,7 +235,7 @@ class TabNetModel(BaseModel):
         return self.model.predict(X_np)
     
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        """Predict probabilities with TabNet (classification only)."""
+        '''TabNet only'''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
         
@@ -245,10 +249,6 @@ class TabNetModel(BaseModel):
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
         
-        import pickle
-        import threading
-        
-        # Use threading lock to prevent conflicts
         lock = threading.Lock()
         with lock:
             model_data = {
@@ -264,8 +264,6 @@ class TabNetModel(BaseModel):
         '''
         Load TabNet model.
         '''
-        import pickle
-        
         with open(filepath, 'rb') as f:
             model_data = pickle.load(f)
         
@@ -282,9 +280,7 @@ class XGBoostModel(BaseModel):
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        import xgboost as xgb
         self.xgb = xgb
-        
         # Set default parameters if not provided
         default_params = {
             'objective': 'binary:logistic',
@@ -374,7 +370,6 @@ class XGBoostModel(BaseModel):
             self.model.save_model(filepath)
         else:
             # Use pickle for compatibility
-            import pickle
             model_data = {
                 'model': self.model,
                 'model_params': self.model_params
@@ -395,8 +390,6 @@ class XGBoostModel(BaseModel):
                 self.model = self.xgb.XGBRegressor()
             self.model.load_model(filepath)
         else:
-            # Load using pickle
-            import pickle
             with open(filepath, 'rb') as f:
                 model_data = pickle.load(f)
             self.model = model_data['model']
@@ -421,27 +414,9 @@ class XGBoostModel(BaseModel):
     def shap_analysis(self, X_background: pd.DataFrame, X_explain: pd.DataFrame, 
                      plot_type: str = "summary", max_display: int = 20, 
                      save_path: Optional[str] = None) -> Dict[str, Any]:
-        '''
-        Perform SHAP analysis for XGBoost model.
-        
-        Args:
-            X_background: Background dataset for SHAP explainer
-            X_explain: Dataset to explain
-            plot_type: Type of SHAP plot ('summary', 'waterfall', 'force', 'dependence')
-            max_display: Maximum number of features to display
-            save_path: Path to save the plot
-            
-        Outputs:
-            Dictionary containing SHAP values and explainer
-        '''
+                         
         if not self.is_fitted:
             raise ValueError("Model must be fitted before SHAP analysis")
-        
-        try:
-            import shap
-            import matplotlib.pyplot as plt
-        except ImportError:
-            raise ImportError("SHAP and matplotlib are required for explainability analysis. Install with: pip install shap matplotlib")
         
         # Create SHAP explainer for XGBoost
         explainer = shap.TreeExplainer(self.model)
@@ -484,8 +459,7 @@ class XGBoostModel(BaseModel):
                 if save_path:
                     plt.savefig(f"{save_path}_force.png", dpi=300, bbox_inches='tight')
                 plt.show()
-        
-        # Calculate feature importance from SHAP values
+
         feature_importance = pd.DataFrame({
             'feature': X_explain.columns,
             'shap_importance': np.abs(shap_values_plot).mean(0)
@@ -503,10 +477,8 @@ class LightGBMModel(BaseModel):
     '''
     LightGBM model implementation for Friend-Or-Foe datasets.
     '''
-    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        import lightgbm as lgb
         self.lgb = lgb
         
         # Set default parameters
@@ -520,7 +492,7 @@ class LightGBMModel(BaseModel):
             'bagging_fraction': 0.8,
             'bagging_freq': 5,
             'verbose': -1,
-            'random_state': 42
+            'random_state': 4221
         }
         
         for key, value in default_params.items():
@@ -598,13 +570,9 @@ class LightGBMModel(BaseModel):
         '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
-        
-        # LightGBM has built-in save functionality
         if filepath.endswith('.txt'):
             self.model.booster_.save_model(filepath)
         else:
-            # Use pickle for compatibility
-            import pickle
             model_data = {
                 'model': self.model,
                 'model_params': self.model_params
@@ -624,14 +592,12 @@ class LightGBMModel(BaseModel):
                 self.model = self.lgb.LGBMRegressor()
             self.model = self.lgb.Booster(model_file=filepath)
         else:
-            # Load using pickle
-            import pickle
             with open(filepath, 'rb') as f:
                 model_data = pickle.load(f)
             self.model = model_data['model']
             self.model_params = model_data['model_params']
-        
         self.is_fitted = True
+        
     def get_feature_importance(self, importance_type: str = "split") -> pd.DataFrame:
         '''
         Get feature importance from LightGBM.
@@ -650,28 +616,10 @@ class LightGBMModel(BaseModel):
     def shap_analysis(self, X_background: pd.DataFrame, X_explain: pd.DataFrame, 
                      plot_type: str = "summary", max_display: int = 20, 
                      save_path: Optional[str] = None) -> Dict[str, Any]:
-        '''
-        Perform SHAP analysis for LightGBM model.
-        
-        Args:
-            X_background: Background dataset for SHAP explainer
-            X_explain: Dataset to explain
-            plot_type: Type of SHAP plot ('summary', 'waterfall', 'force', 'dependence')
-            max_display: Maximum number of features to display
-            save_path: Path to save the plot
-            
-        Outputs:
-            Dictionary containing SHAP values and explainer
-        '''
+                         
         if not self.is_fitted:
             raise ValueError("Model must be fitted before SHAP analysis")
-        
-        try:
-            import shap
-            import matplotlib.pyplot as plt
-        except ImportError:
-            raise ImportError("SHAP and matplotlib are required for explainability analysis. Install with: pip install shap matplotlib")
-        
+                
         # Create SHAP explainer for LightGBM
         explainer = shap.TreeExplainer(self.model)
         
@@ -733,14 +681,12 @@ class CatBoostModel(BaseModel):
     '''
     CatBoost model implementation for Friend-Or-Foe datasets.
     '''
-    
     def __init__(self, **kwargs):
         # Handle parameter mapping BEFORE calling super().__init__
         if 'n_estimators' in kwargs:
             kwargs['iterations'] = kwargs.pop('n_estimators')
         
         super().__init__(**kwargs)
-        import catboost as cb
         self.cb = cb
         
         # Set default parameters
@@ -763,7 +709,6 @@ class CatBoostModel(BaseModel):
         '''
         Fit CatBoost model.
         '''
-        
         if task_type.lower() == "classification":
             self.model = self.cb.CatBoostClassifier(**self.model_params)
         else:
@@ -867,12 +812,6 @@ class CatBoostModel(BaseModel):
         if not self.is_fitted:
             raise ValueError("Model must be fitted before SHAP analysis")
         
-        try:
-            import shap
-            import matplotlib.pyplot as plt
-        except ImportError:
-            raise ImportError("SHAP and matplotlib are required for explainability analysis. Install with: pip install shap matplotlib")
-        
         # Create SHAP 
         explainer = shap.TreeExplainer(self.model)
         
@@ -955,21 +894,6 @@ class FTTransformerModel(BaseModel):
             X_val: Optional[pd.DataFrame] = None,
             y_val: Optional[pd.DataFrame] = None,
             task_type: str = "classification") -> 'FTTransformerModel':
-        """Fit FT-Transformer model using rtdl_revisiting_models with default parameters."""
-        
-        try:
-            import torch
-            import torch.nn.functional as F
-            import delu
-            import numpy as np
-            import scipy.special
-            import sklearn.preprocessing
-            from rtdl_revisiting_models import FTTransformer
-            from tqdm import tqdm
-            import math
-        except ImportError:
-            raise ImportError("Required packages missing. Install with: pip install rtdl-revisiting-models delu")
-        
         # Set device
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         delu.random.seed(self.model_params['random_state'])
@@ -984,7 +908,6 @@ class FTTransformerModel(BaseModel):
         X_val_np = X_val.values.astype(np.float32) if X_val is not None else None
         y_val_np = y_val.values.flatten() if y_val is not None else None
         
-        # Feature preprocessing (using quantile transformation like in the example)
         noise = np.random.default_rng(self.model_params['random_state']).normal(
             0.0, 1e-5, X_train_np.shape
         ).astype(X_train_np.dtype)
@@ -1061,10 +984,8 @@ class FTTransformerModel(BaseModel):
         @torch.no_grad()
         def evaluate(part: str) -> float:
             self.model.eval()
-            
             y_pred_list = []
             y_true_list = []
-            
             for batch in delu.iter_batches(data[part], self.model_params['eval_batch_size']):
                 preds = apply_model(batch)
                 y_pred_list.append(preds.cpu().numpy())
@@ -1081,7 +1002,6 @@ class FTTransformerModel(BaseModel):
                 y_pred_class = y_pred.argmax(1)
                 score = sklearn.metrics.accuracy_score(y_true, y_pred_class)
             else:
-                # Regression - return negative RMSE for maximization
                 score = -np.sqrt(sklearn.metrics.mean_squared_error(y_true, y_pred))
             
             return score
@@ -1106,18 +1026,15 @@ class FTTransformerModel(BaseModel):
             self.model.train()
             epoch_loss = 0
             n_batches = 0
-            
             progress_bar = tqdm(
                 delu.iter_batches(data["train"], batch_size, shuffle=True),
                 desc=f"Epoch {epoch+1}/{self.model_params['max_epochs']}",
                 total=epoch_size,
                 leave=False
             )
-            
             for batch in progress_bar:
                 optimizer.zero_grad()
                 predictions = apply_model(batch)
-                
                 if self.task_type == "multiclass":
                     loss = loss_fn(predictions, batch["y"])
                 else:
@@ -1125,12 +1042,9 @@ class FTTransformerModel(BaseModel):
                 
                 loss.backward()
                 optimizer.step()
-                
                 epoch_loss += loss.item()
                 n_batches += 1
-                
                 progress_bar.set_postfix({'loss': f'{loss.item():.4f}'})
-            
             avg_train_loss = epoch_loss / n_batches
             self.training_history['train_loss'].append(avg_train_loss)
             
@@ -1172,13 +1086,6 @@ class FTTransformerModel(BaseModel):
         '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
-        
-        import torch
-        import delu
-        import numpy as np
-        import scipy.special
-        
-        # Preprocess features
         X_processed = self.preprocessing.transform(X.values.astype(np.float32))
         X_tensor = torch.FloatTensor(X_processed).to(self.device)
         
@@ -1203,18 +1110,11 @@ class FTTransformerModel(BaseModel):
             return y_pred * self.Y_std + self.Y_mean
     
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        """Predict probabilities with FT-Transformer (classification only)."""
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
-        
         if self.task_type == "regression":
             raise NotImplementedError("predict_proba not available for regression")
-        
-        import torch
-        import delu
-        import numpy as np
-        import scipy.special
-        
+    
         # Preprocess features
         X_processed = self.preprocessing.transform(X.values.astype(np.float32))
         X_tensor = torch.FloatTensor(X_processed).to(self.device)
@@ -1238,11 +1138,9 @@ class FTTransformerModel(BaseModel):
             return scipy.special.softmax(y_pred, axis=1)
     
     def save_model(self, filepath: str):
-        """Save FT-Transformer model."""
+        
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
-        
-        import torch
         
         model_data = {
             'model_state_dict': self.model.state_dict(),
@@ -1266,11 +1164,7 @@ class FTTransformerModel(BaseModel):
         '''
         Load FT-Transformer model.
         '''
-        import torch
-        from rtdl_revisiting_models import FTTransformer
-        
         model_data = torch.load(filepath, map_location='cpu', weights_only=False)
-        
         self.model_params = model_data['model_params']
         self.training_history = model_data['training_history']
         self.task_type = model_data['task_type']
@@ -1330,24 +1224,6 @@ class TabMModel(BaseModel):
         '''
         Fit TabM model using the official implementation.
         '''
-        
-        try:
-            import torch
-            import torch.nn.functional as F
-            import numpy as np
-            import scipy.special
-            import sklearn.preprocessing
-            import sklearn.metrics
-            from tqdm import tqdm
-            import math
-            import random
-            
-            # Import tbm
-            from .tabm.model import Model, make_parameter_groups
-            
-        except ImportError:
-            raise ImportError("Required packages missing. Install TabM dependencies and ensure model files are in friend_or_foe/models/tabm/")
-        
         # Set random seeds
         seed = self.model_params['random_state']
         random.seed(seed)
@@ -1470,7 +1346,6 @@ class TabMModel(BaseModel):
                 .float()
             )
         
-        # Evaluation function
         @torch.no_grad()
         def evaluate(part: str) -> float:
             self.model.eval()
@@ -1590,11 +1465,7 @@ class TabMModel(BaseModel):
         '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
-        
-        import torch
-        import numpy as np
-        import scipy.special
-        
+
         # Preprocess features
         X_processed = self.preprocessing.transform(X.values.astype(np.float32))
         X_tensor = torch.FloatTensor(X_processed).to(self.device)
@@ -1622,16 +1493,11 @@ class TabMModel(BaseModel):
             return y_pred.argmax(1)
     
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        """Predict probabilities with TabM (classification only)."""
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
         
         if self.task_type == "regression":
             raise NotImplementedError("predict_proba not available for regression")
-        
-        import torch
-        import numpy as np
-        import scipy.special
         
         # Preprocess features
         X_processed = self.preprocessing.transform(X.values.astype(np.float32))
@@ -1659,8 +1525,6 @@ class TabMModel(BaseModel):
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
         
-        import torch
-        
         model_data = {
             'model_state_dict': self.model.state_dict(),
             'model_params': self.model_params,
@@ -1672,14 +1536,12 @@ class TabMModel(BaseModel):
             'device': str(self.device),
             'n_features': self.n_features,
         }
-        
         torch.save(model_data, filepath)
     
     def load_model(self, filepath: str):
         '''
         Load TabM model.
         '''
-    
         model_data = torch.load(filepath, map_location='cpu', weights_only=False)
         
         self.model_params = model_data['model_params']
@@ -1710,3 +1572,4 @@ class TabMModel(BaseModel):
         
         self.model.load_state_dict(model_data['model_state_dict'])
         self.is_fitted = True
+        
