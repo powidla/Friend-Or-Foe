@@ -17,7 +17,6 @@ from torch import Tensor
 from tqdm.std import tqdm
 import pandas as pd
 import json
-import numpy as np
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import torch
 from sklearn.metrics import (
@@ -25,8 +24,9 @@ from sklearn.metrics import (
     matthews_corrcoef, roc_auc_score, mean_squared_error
 )
 from model import Model, make_parameter_groups
-warnings.simplefilter('ignore')
 
+
+warnings.simplefilter('ignore')
 warnings.resetwarnings()
 seed = 0
 random.seed(seed)
