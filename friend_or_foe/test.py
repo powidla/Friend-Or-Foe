@@ -173,7 +173,6 @@ def test_model_interface(model_class, model_name: str, task_type: str = "classif
         elif model_name == "TabM":
             model = model_class(max_epochs=2, patience=1, batch_size=64, k=4, d_block=32)
         else:
-            # Tree-based models
             model = model_class(n_estimators=10, random_state=42)
         
         # Test 1: Model initialization
@@ -419,25 +418,25 @@ def run_all_tests() -> bool:
     print_test_header("TESTING DATA LOADER")
     test_results.append(("DataLoader", test_data_loader()))
     
-    # Test 2: Model Interfaces - Classification
+    # Test 2: Classification
     print_test_header("TESTING MODEL INTERFACES - CLASSIFICATION")
     for model_class, model_name in models_to_test:
         result = test_model_interface(model_class, model_name, "classification")
         test_results.append((f"{model_name} (Classification)", result))
     
-    # Test 3: Model Interfaces - Regression
+    # Test 3: Regression
     print_test_header("TESTING MODEL INTERFACES - REGRESSION")
     for model_class, model_name in models_to_test:
         result = test_model_interface(model_class, model_name, "regression")
         test_results.append((f"{model_name} (Regression)", result))
     
-    # Test 4: Save/Load Functionality
+    # Test 4: Save/Load 
     print_test_header("TESTING SAVE/LOAD FUNCTIONALITY")
     for model_class, model_name in models_to_test:
         result = test_model_save_load(model_class, model_name, "classification")
         test_results.append((f"{model_name} (Save/Load)", result))
     
-    # Test 5: SHAP Analysis (Tree models only)
+    # Test 5: SHAP Analysis 
     print_test_header("TESTING SHAP ANALYSIS")
     for model_class, model_name in tree_models:
         result = test_tree_model_shap(model_class, model_name)
