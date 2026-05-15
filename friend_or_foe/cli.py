@@ -19,7 +19,7 @@ def main():
     Main CLI entry point for Friend-Or-Foe package.
     '''
     parser = argparse.ArgumentParser(
-        description="Friend-Or-Foe: Microbial Interaction Dataset Tools",
+        description="Friend-Or-Foe: Dataset Tools",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples to use:
@@ -176,8 +176,6 @@ Examples to use:
                             choices=['classification', 'regression'],
                             help='Test specific tasks only')
     test_parser.add_argument('--quick', action='store_true', help='Run quick tests only')
-
-    
     args = parser.parse_args()
     
     if args.command is None:
@@ -211,10 +209,6 @@ Examples to use:
 
 
 def parse_model_parameters(args):
-    """Parse model-specific parameters from CLI arguments."""
-    import json
-    
-    # Start with custom params from JSON if provided
     custom_params = {}
     if args.params:
         try:
@@ -244,8 +238,8 @@ def parse_model_parameters(args):
             xgb_params['subsample'] = args.xgb_subsample
         if args.xgb_colsample_bytree is not None:
             xgb_params['colsample_bytree'] = args.xgb_colsample_bytree
-        
-        # Set defaults if not specified
+            
+        # Set defaults
         default_xgb = {
             'n_estimators': 200,
             'max_depth': 6,
@@ -421,7 +415,6 @@ def handle_list_datasets(loader: FriendOrFoeDataLoader, args):
     
     print(f"Found {len(datasets)} datasets:")
     print("-" * 50)
-    
     for dataset_key in sorted(datasets.keys()):
         task, collection, group, dataset = dataset_key.split('/')
         print(f"Task: {task}, Collection: {collection}, Group: {group}, Dataset: {dataset}")
@@ -525,7 +518,7 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     else:
         raise ValueError(f"Unknown model: {args.model}")
     
-    # Handle TabNet specific training parameters
+    # Handle TabNet 
     fit_params = {}
     if args.model == 'tabnet':
         if args.tabnet_max_epochs is not None:
@@ -535,7 +528,6 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
         if args.tabnet_lr is not None:
             fit_params['lr'] = args.tabnet_lr
     
-    # Train mode
     print("Training model...")
     start_time = time.time()
     
@@ -570,12 +562,10 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     except Exception as e:
         print(f"Could not get feature importance: {e}")
     
-    # Save model
     model_save_path = f"model_{args.model}_{args.task}_{args.collection}_{args.group}_{args.dataset}.pkl"
     model.save_model(model_save_path)
     print(f"Model saved to: {model_save_path}")
-    
-    # Save results if requested
+
     if args.output_file:
         results = {
             'dataset': f"{args.task}/{args.collection}/{args.group}/{args.dataset}",
@@ -599,14 +589,13 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     print(f"\n Experiment completed successfully!")
     return model, metrics
 
+
 def handle_test_suite(args):
     '''
     Handle test suite command.
     '''
     try:
-        
         success = run_all_tests()
-        
         if success:
             print("All tests passed!")
             sys.exit(0)
@@ -657,7 +646,6 @@ def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
     else:
         raise ValueError(f"Unsupported model type: {args.model_type}")
     
-    # Load the trained model
     try:
         model.load_model(args.model_path)
         print("Model loaded successfully")
@@ -692,7 +680,6 @@ def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
     for idx, row in top_features.iterrows():
         print(f"{idx+1:2d}. {row['feature']:<25} | Importance: {row['shap_importance']:.6f}")
     
-    # Compare with native feature importance if available
     try:
         native_importance = model.get_feature_importance()
         print(f"\n Top 10 Most Important Features (Native Model Importance):")
@@ -704,7 +691,7 @@ def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
         print(f"Could not get native feature importance: {e}")
     
     # Save 
-    if args.save_path:
+        if args.save_path:
         print(f"\n Saving results...")
         
         # Save SHAP feature importance
@@ -712,7 +699,6 @@ def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
         shap_results['feature_importance'].to_csv(shap_importance_file, index=False)
         print(f"SHAP importance saved to: {shap_importance_file}")
         
-        # Save native feature importance
         try:
             native_importance = model.get_feature_importance()
             native_importance_file = f"{args.save_path}_native_importance.csv"
