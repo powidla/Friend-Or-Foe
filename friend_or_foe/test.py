@@ -28,7 +28,7 @@ try:
     from friend_or_foe.data.loader import FriendOrFoeDataLoader
 except ImportError as e:
     print(f"Import Error: {e}")
-    print("Make sure the friend_or_foe package is properly installed or in your Python path.")
+    print("Make sure the friend_or_foe package is properly installed in the PATH.")
     sys.exit(1)
 
 
@@ -84,9 +84,7 @@ def print_info(message: str):
     print(f"{TestColors.CYAN} {message}{TestColors.END}")
 
 
-def create_synthetic_dataset(n_samples: int = 1000, n_features: int = 20, 
-                           task_type: str = "classification", 
-                           n_classes: int = 2) -> Dict[str, pd.DataFrame]:
+def create_synthetic_dataset(n_samples: int = 1000, n_features: int = 20, task_type: str = "classification", n_classes: int = 2):
     '''
     Create synthetic dataset for testing.
     
@@ -99,9 +97,8 @@ def create_synthetic_dataset(n_samples: int = 1000, n_features: int = 20,
     Returns:
         Dictionary with train/val/test splits
     '''
-    np.random.seed(42)
+    np.random.seed(4221)
     
-    # Generate features
     X = np.random.randn(n_samples, n_features).astype(np.float32)
     
     if task_type == "classification":
@@ -122,7 +119,7 @@ def create_synthetic_dataset(n_samples: int = 1000, n_features: int = 20,
         noise = np.random.randn(n_samples) * 0.1
         y = X @ weights + noise
     
-    # Conver
+    # Convert
     feature_names = [f"feature_{i}" for i in range(n_features)]
     X_df = pd.DataFrame(X, columns=feature_names)
     y_df = pd.DataFrame(y, columns=['target'])
