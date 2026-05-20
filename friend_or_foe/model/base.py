@@ -39,7 +39,6 @@ class BaseModel(ABC):
     Abstract base class for all Friend-Or-Foe models.
     This class defines all models .
     '''
-    
     def __init__(self, **kwargs):
         self.model = None
         self.is_fitted = False
@@ -47,9 +46,7 @@ class BaseModel(ABC):
         self.training_history = {}
         
     @abstractmethod
-    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame, 
-            X_val: Optional[pd.DataFrame] = None, 
-            y_val: Optional[pd.DataFrame] = None) -> 'BaseModel':
+    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.DataFrame] = None) -> 'BaseModel':
         '''
         Train the model on the given data.
         
@@ -89,8 +86,7 @@ class BaseModel(ABC):
         '''
         raise NotImplementedError("predict_proba not implemented for this model")
     
-    def evaluate(self, X_test: pd.DataFrame, y_test: pd.DataFrame, 
-                task_type: str = "classification") -> Dict[str, float]:
+    def evaluate(self, X_test: pd.DataFrame, y_test: pd.DataFrame, task_type: str = "classification") -> Dict[str, float]:
         '''
         Evaluate the model on test data.
         
@@ -106,14 +102,13 @@ class BaseModel(ABC):
             raise ValueError("Model must be fitted before evaluation")
             
         predictions = self.predict(X_test)
-        
+    
         if task_type.lower() == "classification":
             return self._classification_metrics(y_test, predictions, X_test)
         else:
             return self._regression_metrics(y_test, predictions)
     
-    def _classification_metrics(self, y_true: pd.DataFrame, y_pred: np.ndarray, 
-                              X: pd.DataFrame) -> Dict[str, float]:
+    def _classification_metrics(self, y_true: pd.DataFrame, y_pred: np.ndarray, X: pd.DataFrame) -> Dict[str, float]:
         '''
         Calculate classification metrics.
         '''
@@ -141,7 +136,6 @@ class BaseModel(ABC):
         Calculate regression metrics.
         '''
         y_true_flat = y_true.values.flatten() if hasattr(y_true, 'values') else y_true
-        
         return {
             'mse': mean_squared_error(y_true_flat, y_pred),
             'rmse': np.sqrt(mean_squared_error(y_true_flat, y_pred)),
@@ -168,16 +162,12 @@ class TabNetModel(BaseModel):
     '''
     TabNet model implementation for Friend-Or-Foe datasets.
     '''
-    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.TabNetClassifier = TabNetClassifier
         self.TabNetRegressor = TabNetRegressor
         
-    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame,
-            X_val: Optional[pd.DataFrame] = None,
-            y_val: Optional[pd.DataFrame] = None,
-            task_type: str = "classification") -> 'TabNetModel':
+    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.DataFrame] = None, task_type: str = "classification") -> 'TabNetModel':
         
         # Prepare data
         X_train_np = X_train.values.astype(np.float32)
@@ -235,7 +225,9 @@ class TabNetModel(BaseModel):
         return self.model.predict(X_np)
     
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        '''TabNet only'''
+        '''
+        TabNet only
+        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
         
@@ -277,7 +269,6 @@ class XGBoostModel(BaseModel):
     '''
     XGBoost model implementation for Friend-Or-Foe datasets.
     '''
-    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.xgb = xgb
@@ -295,10 +286,7 @@ class XGBoostModel(BaseModel):
             if key not in self.model_params:
                 self.model_params[key] = value
     
-    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame,
-            X_val: Optional[pd.DataFrame] = None,
-            y_val: Optional[pd.DataFrame] = None,
-            task_type: str = "classification") -> 'XGBoostModel':
+    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.DataFrame] = None, task_type: str = "classification") -> 'XGBoostModel':
         '''
         Fit XGBoost model.
         '''
@@ -475,7 +463,7 @@ class XGBoostModel(BaseModel):
 
 class LightGBMModel(BaseModel):
     '''
-    LightGBM model implementation for Friend-Or-Foe datasets.
+    LightGBM model.
     '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -499,14 +487,7 @@ class LightGBMModel(BaseModel):
             if key not in self.model_params:
                 self.model_params[key] = value
     
-    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame,
-            X_val: Optional[pd.DataFrame] = None,
-            y_val: Optional[pd.DataFrame] = None,
-            task_type: str = "classification") -> 'LightGBMModel':
-        '''
-        Fit LightGBM model.
-        '''
-        
+    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.DataFrame] = None, task_type: str = "classification") -> 'LightGBMModel':
         # Prepare parameters based on task type
         if task_type.lower() == "classification":
             n_classes = len(np.unique(y_train.values.flatten()))
@@ -539,7 +520,6 @@ class LightGBMModel(BaseModel):
             eval_set=eval_set,
             callbacks=callbacks
         )
-        
         self.is_fitted = True
         return self
     
@@ -554,7 +534,7 @@ class LightGBMModel(BaseModel):
     
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
         '''
-        Predict probabilities with LightGBM (classification only).
+        Classification only.
         '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
@@ -566,7 +546,7 @@ class LightGBMModel(BaseModel):
     
     def save_model(self, filepath: str):
         '''
-        Save LightGBM model.
+        Save LightGBM.
         '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
@@ -582,7 +562,7 @@ class LightGBMModel(BaseModel):
     
     def load_model(self, filepath: str):
         '''
-        Load LightGBM model.
+        Load LightGBM.
         '''
         if filepath.endswith('.txt'):
             # Load using LightGBM's native format
@@ -613,51 +593,37 @@ class LightGBMModel(BaseModel):
             'importance': importance
         }).sort_values('importance', ascending=False)
     
-    def shap_analysis(self, X_background: pd.DataFrame, X_explain: pd.DataFrame, 
-                     plot_type: str = "summary", max_display: int = 20, 
-                     save_path: Optional[str] = None) -> Dict[str, Any]:
-                         
+    def shap_analysis(self, X_background: pd.DataFrame, X_explain: pd.DataFrame, plot_type: str = "summary", max_display: int = 20, save_path: Optional[str] = None) -> Dict[str, Any]:               
         if not self.is_fitted:
             raise ValueError("Model must be fitted before SHAP analysis")
                 
-        # Create SHAP explainer for LightGBM
         explainer = shap.TreeExplainer(self.model)
-        
-        # Calculate SHAP values
         print("Calculating SHAP values...")
         shap_values = explainer.shap_values(X_explain.values)
         
-        # Handle binary vs multiclass
         if isinstance(shap_values, list) and len(shap_values) > 1:
             # Multiclass - use the positive class for binary or first class for multiclass
             shap_values_plot = shap_values[1] if len(shap_values) == 2 else shap_values[0]
         else:
             shap_values_plot = shap_values
-        
-        # Create plots based on type
+    
         if plot_type == "summary":
             plt.figure(figsize=(10, 8))
-            shap.summary_plot(shap_values_plot, X_explain.values, 
-                            feature_names=X_explain.columns, 
-                            max_display=max_display, show=False)
+            shap.summary_plot(shap_values_plot, X_explain.values, feature_names=X_explain.columns, max_display=max_display, show=False)
             if save_path:
                 plt.savefig(f"{save_path}_summary.png", dpi=300, bbox_inches='tight')
             plt.show()
             
         elif plot_type == "waterfall":
             if len(X_explain) > 0:
-                shap.waterfall_plot(explainer.expected_value, shap_values_plot[0], 
-                                  X_explain.iloc[0], feature_names=X_explain.columns,
-                                  max_display=max_display, show=False)
+                shap.waterfall_plot(explainer.expected_value, shap_values_plot[0], X_explain.iloc[0], feature_names=X_explain.columns, max_display=max_display, show=False)
                 if save_path:
                     plt.savefig(f"{save_path}_waterfall.png", dpi=300, bbox_inches='tight')
                 plt.show()
                 
         elif plot_type == "force":
             if len(X_explain) > 0:
-                shap.force_plot(explainer.expected_value, shap_values_plot[0], 
-                              X_explain.iloc[0], feature_names=X_explain.columns,
-                              matplotlib=True, show=False)
+                shap.force_plot(explainer.expected_value, shap_values_plot[0], X_explain.iloc[0], feature_names=X_explain.columns, matplotlib=True, show=False)
                 if save_path:
                     plt.savefig(f"{save_path}_force.png", dpi=300, bbox_inches='tight')
                 plt.show()
@@ -676,10 +642,9 @@ class LightGBMModel(BaseModel):
         }
 
 
-
 class CatBoostModel(BaseModel):
     '''
-    CatBoost model implementation for Friend-Or-Foe datasets.
+    CatBoost model.
     '''
     def __init__(self, **kwargs):
         # Handle parameter mapping BEFORE calling super().__init__
@@ -702,13 +667,7 @@ class CatBoostModel(BaseModel):
             if key not in self.model_params:
                 self.model_params[key] = value
     
-    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame,
-            X_val: Optional[pd.DataFrame] = None,
-            y_val: Optional[pd.DataFrame] = None,
-            task_type: str = "classification") -> 'CatBoostModel':
-        '''
-        Fit CatBoost model.
-        '''
+    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.DataFrame] = None, task_type: str = "classification") -> 'CatBoostModel':
         if task_type.lower() == "classification":
             self.model = self.cb.CatBoostClassifier(**self.model_params)
         else:
@@ -731,9 +690,6 @@ class CatBoostModel(BaseModel):
         return self
     
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        '''
-        Make predictions with CatBoost.
-        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
         
@@ -741,7 +697,7 @@ class CatBoostModel(BaseModel):
     
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
         '''
-        Predict probabilities with CatBoost (classification only).
+        Classification only.
         '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
@@ -752,9 +708,6 @@ class CatBoostModel(BaseModel):
         return self.model.predict_proba(X.values)
     
     def save_model(self, filepath: str):
-        '''
-        Save CatBoost model.
-        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
         
@@ -762,9 +715,6 @@ class CatBoostModel(BaseModel):
         self.model.save_model(filepath)
     
     def load_model(self, filepath: str):
-        '''
-        Load CatBoost model.
-        '''
         # CatBoost requires us to know the model type beforehand
         # Try to infer from filepath or use a default
         try:
@@ -778,10 +728,9 @@ class CatBoostModel(BaseModel):
                 raise ValueError(f"Could not load CatBoost model: {e}")
         
         self.is_fitted = True
+        
     def get_feature_importance(self) -> pd.DataFrame:
-        '''
-        Get feature importance from CatBoost.
-        '''
+        
         if not self.is_fitted:
             raise ValueError("Model must be fitted before getting feature importance")
         
@@ -793,35 +742,18 @@ class CatBoostModel(BaseModel):
             'importance': importance
         }).sort_values('importance', ascending=False)
     
-    def shap_analysis(self, X_background: pd.DataFrame, X_explain: pd.DataFrame, 
-                     plot_type: str = "summary", max_display: int = 20, 
-                     save_path: Optional[str] = None) -> Dict[str, Any]:
-        '''
-        Perform SHAP analysis for CatBoost model.
-        
-        Args:
-            X_background: Background dataset for SHAP explainer
-            X_explain: Dataset to explain
-            plot_type: Type of SHAP plot ('summary', 'waterfall', 'force', 'dependence')
-            max_display: Maximum number of features to display
-            save_path: Path to save the plot
-            
-        Outputs:
-            Dictionary containing SHAP values and explainer
-        '''
+    def shap_analysis(self, X_background: pd.DataFrame, X_explain: pd.DataFrame, plot_type: str = "summary", max_display: int = 20, save_path: Optional[str] = None) -> Dict[str, Any]:
+
         if not self.is_fitted:
             raise ValueError("Model must be fitted before SHAP analysis")
         
-        # Create SHAP 
         explainer = shap.TreeExplainer(self.model)
-        
-        # Calculate SHAP values
         print("Calculating SHAP values...")
         shap_values = explainer.shap_values(X_explain.values)
         
         # Handle binary vs multiclass
         if isinstance(shap_values, list) and len(shap_values) > 1:
-            # Multiclass - use the positive class for binary or first class for multiclass
+            # Multiclass
             shap_values_plot = shap_values[1] if len(shap_values) == 2 else shap_values[0]
         else:
             shap_values_plot = shap_values
@@ -838,18 +770,14 @@ class CatBoostModel(BaseModel):
             
         elif plot_type == "waterfall":
             if len(X_explain) > 0:
-                shap.waterfall_plot(explainer.expected_value, shap_values_plot[0], 
-                                  X_explain.iloc[0], feature_names=X_explain.columns,
-                                  max_display=max_display, show=False)
+                shap.waterfall_plot(explainer.expected_value, shap_values_plot[0], X_explain.iloc[0], feature_names=X_explain.columns, max_display=max_display, show=False)
                 if save_path:
                     plt.savefig(f"{save_path}_waterfall.png", dpi=300, bbox_inches='tight')
                 plt.show()
                 
         elif plot_type == "force":
             if len(X_explain) > 0:
-                shap.force_plot(explainer.expected_value, shap_values_plot[0], 
-                              X_explain.iloc[0], feature_names=X_explain.columns,
-                              matplotlib=True, show=False)
+                shap.force_plot(explainer.expected_value, shap_values_plot[0], X_explain.iloc[0], feature_names=X_explain.columns, matplotlib=True, show=False)
                 if save_path:
                     plt.savefig(f"{save_path}_force.png", dpi=300, bbox_inches='tight')
                 plt.show()
@@ -867,13 +795,13 @@ class CatBoostModel(BaseModel):
             'expected_value': explainer.expected_value
         }
 
+
 class FTTransformerModel(BaseModel):
     '''
     FT-Transformer model implementation using rtdl_revisiting_models package.
     https://github.com/yandex-research/rtdl
     Uses default parameters only, following the standard usage pattern.
     '''
-    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
@@ -883,18 +811,15 @@ class FTTransformerModel(BaseModel):
             'patience': 16,
             'batch_size': 256,
             'eval_batch_size': 4096,
-            'random_state': 42
+            'random_state': 4221
         }
         
         for key, value in default_params.items():
             if key not in self.model_params:
                 self.model_params[key] = value
     
-    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame,
-            X_val: Optional[pd.DataFrame] = None,
-            y_val: Optional[pd.DataFrame] = None,
-            task_type: str = "classification") -> 'FTTransformerModel':
-        # Set device
+    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.DataFrame] = None, task_type: str = "classification") -> 'FTTransformerModel':
+
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         delu.random.seed(self.model_params['random_state'])
         
@@ -904,7 +829,6 @@ class FTTransformerModel(BaseModel):
         # Convert to numpy
         X_train_np = X_train.values.astype(np.float32)
         y_train_np = y_train.values.flatten()
-        
         X_val_np = X_val.values.astype(np.float32) if X_val is not None else None
         y_val_np = y_val.values.flatten() if y_val is not None else None
         
@@ -1081,9 +1005,6 @@ class FTTransformerModel(BaseModel):
         return self
     
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        '''
-        Make predictions with FT-Transformer.
-        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
         X_processed = self.preprocessing.transform(X.values.astype(np.float32))
@@ -1138,7 +1059,6 @@ class FTTransformerModel(BaseModel):
             return scipy.special.softmax(y_pred, axis=1)
     
     def save_model(self, filepath: str):
-        
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
         
@@ -1161,9 +1081,6 @@ class FTTransformerModel(BaseModel):
         torch.save(model_data, filepath)
     
     def load_model(self, filepath: str):
-        '''
-        Load FT-Transformer model.
-        '''
         model_data = torch.load(filepath, map_location='cpu', weights_only=False)
         self.model_params = model_data['model_params']
         self.training_history = model_data['training_history']
@@ -1193,7 +1110,6 @@ class TabMModel(BaseModel):
     TabM model implementation using the official TabM code.
     https://github.com/yandex-research/tabm
     '''
-    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
@@ -1217,20 +1133,15 @@ class TabMModel(BaseModel):
             if key not in self.model_params:
                 self.model_params[key] = value
     
-    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame,
-            X_val: Optional[pd.DataFrame] = None,
-            y_val: Optional[pd.DataFrame] = None,
-            task_type: str = "classification") -> 'TabMModel':
+    def fit(self, X_train: pd.DataFrame, y_train: pd.DataFrame, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.DataFrame] = None, task_type: str = "classification") -> 'TabMModel':
         '''
         Fit TabM model using the official implementation.
         '''
-        # Set random seeds
         seed = self.model_params['random_state']
         random.seed(seed)
         np.random.seed(seed + 1)
         torch.manual_seed(seed + 2)
-        
-        # Set device
+    
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         print("Preprocessing data for TabM...")
@@ -1416,10 +1327,8 @@ class TabMModel(BaseModel):
                 loss = loss_fn(apply_model('train', batch_idx), Y_train_tensor[batch_idx])
                 loss.backward()
                 optimizer.step()
-                
                 epoch_loss += loss.item()
                 n_batches += 1
-                
                 progress_bar.set_postfix({'loss': f'{loss.item():.4f}'})
             
             avg_train_loss = epoch_loss / n_batches
@@ -1460,9 +1369,6 @@ class TabMModel(BaseModel):
         return self
     
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        '''
-        Make predictions with TabM.
-        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before prediction")
 
@@ -1519,9 +1425,6 @@ class TabMModel(BaseModel):
         return y_pred.mean(1)
     
     def save_model(self, filepath: str):
-        '''
-        Save TabM model.
-        '''
         if not self.is_fitted:
             raise ValueError("Model must be fitted before saving")
         
@@ -1539,9 +1442,6 @@ class TabMModel(BaseModel):
         torch.save(model_data, filepath)
     
     def load_model(self, filepath: str):
-        '''
-        Load TabM model.
-        '''
         model_data = torch.load(filepath, map_location='cpu', weights_only=False)
         
         self.model_params = model_data['model_params']
