@@ -85,21 +85,15 @@ Examples to use:
     # SHAP analysis command
     shap_parser = subparsers.add_parser('shap', help='Perform SHAP analysis on a trained model')
     shap_parser.add_argument('--model-path', required=True, help='Path to saved model file')
-    shap_parser.add_argument('--model-type', required=True, 
-                           choices=['xgboost', 'lightgbm', 'catboost'], 
-                           help='Type of model')
+    shap_parser.add_argument('--model-type', required=True, choices=['xgboost', 'lightgbm', 'catboost'], help='Type of model')
     shap_parser.add_argument('--task', required=True, choices=['Classification', 'Regression'])
     shap_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
     shap_parser.add_argument('--group', required=True, choices=['50', '100'])
     shap_parser.add_argument('--dataset', required=True, help='Dataset identifier')
-    shap_parser.add_argument('--plot-type', default='summary', 
-                           choices=['summary', 'waterfall', 'force'], 
-                           help='Type of SHAP plot to generate')
-    shap_parser.add_argument('--max-display', type=int, default=20, 
-                           help='Maximum number of features to display')
+    shap_parser.add_argument('--plot-type', default='summary', choices=['summary', 'waterfall', 'force'], help='Type of SHAP plot to generate')
+    shap_parser.add_argument('--max-display', type=int, default=20, help='Maximum number of features to display')
     shap_parser.add_argument('--save-path', help='Path to save SHAP plots')
-    shap_parser.add_argument('--sample-size', type=int, default=100, 
-                           help='Number of samples to use for SHAP analysis')
+    shap_parser.add_argument('--sample-size', type=int, default=100, help='Number of samples to use for SHAP analysis')
     
     # Experiment command with all models and custom parameters
     exp_parser = subparsers.add_parser('experiment', help='Run a quick experiment')
@@ -107,9 +101,7 @@ Examples to use:
     exp_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
     exp_parser.add_argument('--group', required=True, choices=['50', '100'])
     exp_parser.add_argument('--dataset', required=True, help='Dataset identifier')
-    exp_parser.add_argument('--model', default='xgboost', 
-                           choices=['tabnet', 'xgboost', 'lightgbm', 'catboost', 'ft_transformer', 'tabm'], 
-                           help='Model to use')
+    exp_parser.add_argument('--model', default='xgboost', choices=['tabnet', 'xgboost', 'lightgbm', 'catboost', 'ft_transformer', 'tabm'], help='Model to use')
     exp_parser.add_argument('--output-file', help='Save results to JSON file')
     exp_parser.add_argument('--params', help='JSON string or file path with custom model parameters')
     
@@ -117,14 +109,14 @@ Examples to use:
     exp_parser.add_argument('--random-state', type=int, default=42, help='Random state for reproducibility')
     exp_parser.add_argument('--verbose', action='store_true', help='Enable verbose training output')
     
-    # XGBoost specific parameters
+    # XGBoost parameters
     exp_parser.add_argument('--xgb-n-estimators', type=int, help='XGBoost: Number of estimators')
     exp_parser.add_argument('--xgb-max-depth', type=int, help='XGBoost: Maximum tree depth')
     exp_parser.add_argument('--xgb-learning-rate', type=float, help='XGBoost: Learning rate')
     exp_parser.add_argument('--xgb-subsample', type=float, help='XGBoost: Subsample ratio')
     exp_parser.add_argument('--xgb-colsample-bytree', type=float, help='XGBoost: Column subsample ratio')
     
-    # LightGBM specific parameters
+    # LightGBM parameters
     exp_parser.add_argument('--lgb-n-estimators', type=int, help='LightGBM: Number of estimators')
     exp_parser.add_argument('--lgb-num-leaves', type=int, help='LightGBM: Number of leaves')
     exp_parser.add_argument('--lgb-learning-rate', type=float, help='LightGBM: Learning rate')
@@ -132,13 +124,13 @@ Examples to use:
     exp_parser.add_argument('--lgb-bagging-fraction', type=float, help='LightGBM: Bagging fraction')
     exp_parser.add_argument('--lgb-min-child-samples', type=int, help='LightGBM: Min child samples')
     
-    # CatBoost specific parameters
+    # CatBoost parameters
     exp_parser.add_argument('--cb-iterations', type=int, help='CatBoost: Number of iterations')
     exp_parser.add_argument('--cb-depth', type=int, help='CatBoost: Tree depth')
     exp_parser.add_argument('--cb-learning-rate', type=float, help='CatBoost: Learning rate')
     exp_parser.add_argument('--cb-l2-leaf-reg', type=float, help='CatBoost: L2 regularization')
     
-    # TabNet specific parameters
+    # TabNet parameters
     exp_parser.add_argument('--tabnet-n-d', type=int, help='TabNet: Width of decision prediction layer')
     exp_parser.add_argument('--tabnet-n-a', type=int, help='TabNet: Width of attention embedding')
     exp_parser.add_argument('--tabnet-n-steps', type=int, help='TabNet: Number of steps in architecture')
@@ -148,14 +140,14 @@ Examples to use:
     exp_parser.add_argument('--tabnet-max-epochs', type=int, help='TabNet: Maximum training epochs')
     exp_parser.add_argument('--tabnet-patience', type=int, help='TabNet: Early stopping patience')
     
-    # FT-Transformer specific parameters
+    # FT-Transformer parameters
     exp_parser.add_argument('--ft-max-epochs', type=int, help='FT-Transformer: Maximum training epochs')
     exp_parser.add_argument('--ft-patience', type=int, help='FT-Transformer: Early stopping patience')
     exp_parser.add_argument('--ft-batch-size', type=int, help='FT-Transformer: Batch size')
     exp_parser.add_argument('--ft-eval-batch-size', type=int, help='FT-Transformer: Evaluation batch size')
 
     
-    # # TabM specific parameters
+    # # TabM parameters
     exp_parser.add_argument('--tabm-arch-type', choices=['tabm', 'tabm-mini'], default='tabm', help='TabM: Architecture type')
     exp_parser.add_argument('--tabm-k', type=int, help='TabM: Number of ensemble members')
     exp_parser.add_argument('--tabm-n-blocks', type=int, help='TabM: Number of MLP blocks')
@@ -169,12 +161,8 @@ Examples to use:
     exp_parser.add_argument('--tabm-eval-batch-size', type=int, help='TabM: Evaluation batch size')
     # For test
     test_parser = subparsers.add_parser('test', help='Run comprehensive test suite')
-    test_parser.add_argument('--models', nargs='+', 
-                            choices=['xgboost', 'lightgbm', 'catboost', 'tabnet', 'ft_transformer', 'tabm'],
-                            help='Test specific models only')
-    test_parser.add_argument('--tasks', nargs='+', 
-                            choices=['classification', 'regression'],
-                            help='Test specific tasks only')
+    test_parser.add_argument('--models', nargs='+', choices=['xgboost', 'lightgbm', 'catboost', 'tabnet', 'ft_transformer', 'tabm'], help='Test specific models only')
+    test_parser.add_argument('--tasks', nargs='+', choices=['classification', 'regression'], help='Test specific tasks only')
     test_parser.add_argument('--quick', action='store_true', help='Run quick tests only')
     args = parser.parse_args()
     
@@ -406,7 +394,9 @@ def parse_model_parameters(args):
 
 
 def handle_list_datasets(loader: FriendOrFoeDataLoader, args):
-    """Handle list-datasets command."""
+    '''
+    Handle list-datasets command.
+    '''
     datasets = loader.list_available_datasets(
         task=args.task,
         collection=args.collection, 
@@ -424,12 +414,12 @@ def handle_list_datasets(loader: FriendOrFoeDataLoader, args):
 
 
 def handle_download(loader: FriendOrFoeDataLoader, args):
-    """Handle download command."""
+    '''
+    Handle download command.
+    '''
     print(f"Downloading dataset: {args.task}/{args.collection}/{args.group}/{args.dataset}")
     
     data = loader.load_dataset(args.task, args.collection, args.group, args.dataset)
-    
-    # Create output directory
     output_dir = Path(args.output_dir) / args.task / args.collection / args.group / args.dataset
     output_dir.mkdir(parents=True, exist_ok=True)
     
@@ -444,7 +434,9 @@ def handle_download(loader: FriendOrFoeDataLoader, args):
 
 
 def handle_download_all(loader: FriendOrFoeDataLoader, args):
-    """Handle download-all command."""
+    '''
+    Handle download-all command.
+    '''
     print(f"Downloading all datasets to: {args.output_dir}")
     loader.download_all_datasets(args.output_dir)
     print("Download complete!")
@@ -469,7 +461,6 @@ def handle_info(loader: FriendOrFoeDataLoader, args):
     print(f"Number of features: {info['n_features']}")
     print(f"Sample shape: {info['sample_shape']}")
     print(f"Feature types: {len(set(info['dtypes'].values()))} unique types")
-    
     print(f"\nFirst 10 features:")
     for i, feature in enumerate(info['feature_names'][:10]):
         print(f"  {i+1}. {feature} ({info['dtypes'][feature]})")
@@ -501,7 +492,7 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     
     print(f"Data loaded: {X_train.shape[0]} train, {X_test.shape[0]} test samples")
     
-    # Initialize model with custom parameters
+    # Initialize 
     print(f"Initializing {args.model} model...")
     if args.model == 'tabnet':
         model = TabNetModel(**model_params)
@@ -539,12 +530,9 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     
     training_time = time.time() - start_time
     print(f"Training completed in {training_time:.2f} seconds")
-    
-    # Evaluate model
+
     print("Evaluating model...")
     metrics = model.evaluate(X_test, y_test, task_type=args.task.lower())
-    
-    # Display results
     print(f"\nResults:")
     print("-" * 40)
     for metric, value in metrics.items():
@@ -585,7 +573,6 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
         with open(args.output_file, 'w') as f:
             json.dump(results, f, indent=2)
         print(f"Results saved to: {args.output_file}")
-    
     print(f"\n Experiment completed successfully!")
     return model, metrics
 
@@ -615,7 +602,6 @@ def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
     print(f"Performing SHAP analysis on {args.model_type} model")
     print(f"Model path: {args.model_path}")
     
-    # Check if model file exists
     if not Path(args.model_path).exists():
         print(f"Error: Model file not found: {args.model_path}")
         sys.exit(1)
@@ -673,7 +659,7 @@ def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
         print(f"Error during SHAP analysis: {e}")
         sys.exit(1)
     
-    # Display feature importance results
+    # Display feature importance
     print(f"\n Top {min(10, len(shap_results['feature_importance']))} Most Important Features (by SHAP):")
     print("-" * 60)
     top_features = shap_results['feature_importance'].head(10)
