@@ -1,4 +1,4 @@
-In this folder we provide MATLAB functions for metabolic modeling. Below we briefly describe the purpose of each function. Running this code requires Gurobi Academic License.
+In this folder we provide MATLAB functions for metabolic modeling. Below we briefly describe the purpose of each function. Running this code requires Gurobi Academic License. Full pipeline can be found in the following [repo](https://github.com/josephine-solowiej-wedderburn/CompCoopEnvPaper).
 
 - ````getmetmodel_fromFile.m```` : loads a ````.mat```` model to the source; 
 
