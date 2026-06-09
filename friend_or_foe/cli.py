@@ -678,12 +678,11 @@ def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
     
     # Save 
         if args.save_path:
-        print(f"\n Saving results...")
-        
-        # Save SHAP feature importance
-        shap_importance_file = f"{args.save_path}_shap_importance.csv"
-        shap_results['feature_importance'].to_csv(shap_importance_file, index=False)
-        print(f"SHAP importance saved to: {shap_importance_file}")
+            print(f"\n Saving results...")
+            # Save SHAP feature importance
+            shap_importance_file = f"{args.save_path}_shap_importance.csv"
+            shap_results['feature_importance'].to_csv(shap_importance_file, index=False)
+            print(f"SHAP importance saved to: {shap_importance_file}")
         
         try:
             native_importance = model.get_feature_importance()
