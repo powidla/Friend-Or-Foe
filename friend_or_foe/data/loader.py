@@ -83,7 +83,10 @@ class FriendOrFoeDataLoader:
                 warnings.warn(f"Could not fetch repo files: {e}")
                 self._repo_files = []
         return self._repo_files
-     
+
+     def _collection_abbrev(self, collection: str) -> str:
+        return self.COLLECTION_ABBREV.get(collection, collection[:2].upper())
+    
     def list_available_datasets(self, task: Optional[str] = None, 
                               collection: Optional[str] = None,
                               group: Optional[str] = None) -> Dict[str, List[str]]:
@@ -199,6 +202,12 @@ class FriendOrFoeDataLoader:
                 warnings.warn(f"Failed to load {key} from {file_path}: {e}")
                 
         return data
+
+    def load_gen_dataset(self, collection: str, group: str, splits: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
+        ...
+
+    def load_cluster_dataset(self, collection: str, group: str, splits: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
+        ...
     
     def load_multiple_datasets(self, configurations: List[Tuple[str, str, str, str]]) -> Dict[str, Dict[str, pd.DataFrame]]:
         '''
