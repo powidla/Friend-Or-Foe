@@ -21,7 +21,7 @@ from .model.base import (
     TabMModel
 )
 
-# Convenience functions
+# Loader functions
 from .data.loader import quick_load, list_all_datasets
 
 __all__ = [
