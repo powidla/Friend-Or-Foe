@@ -43,12 +43,16 @@ class FriendOrFoeDataLoader:
         "GR-I", "GR-II", "GR-III", "GR-IV"
     ]
     # TODO
+    TRANSFER_DATASETS = [
+        "TL-I", "TL-II"
+    ]
+    
     CLUSTERING_DATASETS = [
-        
+        "US-I", "US-II"
     ]
     
     GENERATIVE_DATASETS = [
-        
+        "GEN"
     ]
     
     def __init__(self, cache_dir: Optional[str] = None, verbose: bool = True):
@@ -260,9 +264,7 @@ class FriendOrFoeDataLoader:
         except Exception as e:
             return {"error": str(e)}
     
-    def create_train_test_split(self, data: Dict[str, pd.DataFrame], 
-                              test_size: float = 0.2, 
-                              random_state: int = 42) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def create_train_test_split(self, data: Dict[str, pd.DataFrame], test_size: float = 0.2, random_state: int = 4221) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         '''
         Create a simple train-test split from loaded data.
         
@@ -325,8 +327,7 @@ class FriendOrFoeDataLoader:
 
 
 # Utility functions
-def quick_load(task: str = "Classification", collection: str = "AGORA", 
-               group: str = "100", dataset: str = "BC-I") -> Dict[str, pd.DataFrame]:
+def quick_load(task: str = "Classification", collection: str = "AGORA", group: str = "100", dataset: str = "BC-I") -> Dict[str, pd.DataFrame]:
     '''
     Quick utility function to load a dataset with default parameters.
     
