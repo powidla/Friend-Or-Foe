@@ -30,6 +30,12 @@ class FriendOrFoeDataLoader:
     TASKS = ["Classification", "Regression"]
     COLLECTIONS = ["AGORA", "CARVEME"] 
     GROUPS = ["50", "100"]
+
+    # Collection abbreviations used in filenames
+    COLLECTION_ABBREV = {
+        "AGORA": "AG",
+        "CARVEME": "CM",
+    }
     
     # Common dataset identifiers
     CLASSIFICATION_DATASETS = [
@@ -42,7 +48,7 @@ class FriendOrFoeDataLoader:
     REGRESSION_DATASETS = [
         "GR-I", "GR-II", "GR-III", "GR-IV"
     ]
-    # TODO
+
     TRANSFER_DATASETS = [
         "TL-I", "TL-II"
     ]
@@ -68,9 +74,7 @@ class FriendOrFoeDataLoader:
         self._repo_files = None
         
     def _get_repo_files(self) -> List[str]:
-        '''
-        Get list of all files in the repository.
-        '''
+        '''Get list of all files in the repository.'''
         if self._repo_files is None:
             if self.verbose:
                 print("Fetching repository file list...")
@@ -84,30 +88,28 @@ class FriendOrFoeDataLoader:
                 self._repo_files = []
         return self._repo_files
 
-     def _collection_abbrev(self, collection: str) -> str:
+    def _collection_abbrev(self, collection: str) -> str:
+        '''Return the two-letter abbreviation for a collection name.'''
         return self.COLLECTION_ABBREV.get(collection, collection[:2].upper())
-    
-    def list_available_datasets(self, task: Optional[str] = None, 
-                              collection: Optional[str] = None,
-                              group: Optional[str] = None) -> Dict[str, List[str]]:
+
+
+    def list_available_datasets(self, task: Optional[str] = None, collection: Optional[str] = None, group: Optional[str] = None) -> Dict[str, List[str]]:
         '''
         List all available datasets with optional filtering.
         
         Args:
-            task: Filter by task type ('Classification' or 'Regression')
+            task: Filter by task type ('Classification', 'Regression',
+                  'Clustering', 'Generative', or 'Transfer')
             collection: Filter by collection ('AGORA' or 'CARVEME')
             group: Filter by group ('50' or '100')
             
-        Outputs:
-            Dictionary mapping dataset identifiers to their file paths
+        Returns:
+            Dictionary mapping dataset identifiers to their file paths.
         '''
         files = self._get_repo_files()
         datasets = {}
         
         for file_path in files:
-            if not file_path.endswith('.csv'):
-                continue
-                
             parts = file_path.split('/')
             if len(parts) < 4:
                 continue
@@ -121,11 +123,14 @@ class FriendOrFoeDataLoader:
                 continue  
             if group and file_group != group:
                 continue
+
+            # Only index known file types
+            if not (file_path.endswith('.csv') or file_path.endswith('.npy')):
+                continue
                 
-            # Extract dataset identifier from filename
             filename = parts[-1]
             if '_' in filename:
-                dataset_id = filename.split('_')[-1].replace('.csv', '').split('-')[0:2]
+                dataset_id = filename.split('_')[-1].replace('.csv', '').replace('.npy', '').split('-')[0:2]
                 if len(dataset_id) >= 2:
                     dataset_key = f"{file_task}/{file_collection}/{file_group}/{'-'.join(dataset_id)}"
                     if dataset_key not in datasets:
@@ -133,11 +138,11 @@ class FriendOrFoeDataLoader:
                     datasets[dataset_key].append(file_path)
         
         return datasets
-    
+
     def load_dataset(self, task: str, collection: str, group: str, 
                     dataset: str, splits: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
         '''
-        Load a specific dataset with all its splits.
+        Load a Classification or Regression dataset with all its splits.
         
         Args:
             task: Task type ('Classification' or 'Regression')
@@ -146,8 +151,8 @@ class FriendOrFoeDataLoader:
             dataset: Dataset identifier (e.g., 'BC-I', 'GR-III')
             splits: List of splits to load. Default: ['train', 'val', 'test']
             
-        Outputs:
-            Dictionary containing DataFrames for each split and data type
+        Returns:
+            Dictionary with keys like 'X_train', 'y_train', 'X_val', etc.
             
         Example:
             >>> loader = FriendOrFoeDataLoader()
@@ -155,9 +160,10 @@ class FriendOrFoeDataLoader:
             >>> X_train = data['X_train']
             >>> y_train = data['y_train']
         '''
-        # Validate inputs
         if task not in self.TASKS:
-            raise ValueError(f"Task must be one of {self.TASKS}")
+            raise ValueError(f"Task must be one of {self.TASKS}. "
+                             f"For other tasks use load_generative_dataset, "
+                             f"load_clustering_dataset, or load_transfer_dataset.")
         if collection not in self.COLLECTIONS:
             raise ValueError(f"Collection must be one of {self.COLLECTIONS}")
         if group not in self.GROUPS:
@@ -166,7 +172,6 @@ class FriendOrFoeDataLoader:
         if splits is None:
             splits = ['train', 'val', 'test']
             
-        # Construct file paths
         base_path = f"{task}/{collection}/{group}/{dataset}"
         
         file_mapping = {}
@@ -176,15 +181,14 @@ class FriendOrFoeDataLoader:
                 filename = f"{key}_{dataset}-{group}.csv"
                 file_mapping[key] = f"{base_path}/{filename}"
         
-        # Download and load files
         data = {}
         
         if self.verbose:
             print(f"Loading dataset: {task}/{collection}/{group}/{dataset}")
             
         for key, file_path in tqdm(file_mapping.items(), 
-                                 desc="Downloading files", 
-                                 disable=not self.verbose):
+                                   desc="Downloading files", 
+                                   disable=not self.verbose):
             try:
                 local_path = hf_hub_download(
                     repo_id=self.REPO_ID,
@@ -196,37 +200,61 @@ class FriendOrFoeDataLoader:
                 
                 if self.verbose and key == f"X_{splits[0]}":
                     print(f"  Features shape: {data[key].shape}")
-                    print(f"  Feature columns: {list(data[key].columns[:5])}{'...' if len(data[key].columns) > 5 else ''}")
+                    print(f"  Feature columns: {list(data[key].columns[:5])}"
+                          f"{'...' if len(data[key].columns) > 5 else ''}")
                     
             except Exception as e:
                 warnings.warn(f"Failed to load {key} from {file_path}: {e}")
                 
         return data
 
-    def load_gen_dataset(self, collection: str, group: str, splits: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
-        ''' ... '''
+    # ------------------------------------------------------------------
+    # load_generative_dataset
+    # ------------------------------------------------------------------
+
+    def load_generative_dataset(self, collection: str, group: str, splits: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
+        '''
+        Load a Generative dataset.
+
+        File naming convention:
+            df_train_{coll_abbrev}-{group}.csv   e.g. df_train_AG-100.csv
+            df_test_{coll_abbrev}-{group}.csv    e.g. df_test_CM-50.csv
+
+        Args:
+            collection: Collection type ('AGORA' or 'CARVEME')
+            group: Group identifier ('50' or '100')
+            splits: Splits to load. Default: ['train', 'test']
+
+        Returns:
+            Dictionary with keys 'df_train' and/or 'df_test' mapping to DataFrames.
+
+        Example:
+            >>> loader = FriendOrFoeDataLoader()
+            >>> data = loader.load_generative_dataset('AGORA', '100')
+            >>> df_train = data['df_train']
+        '''
         if collection not in self.COLLECTIONS:
             raise ValueError(f"Collection must be one of {self.COLLECTIONS}")
         if group not in self.GROUPS:
             raise ValueError(f"Group must be one of {self.GROUPS}")
- 
+
         if splits is None:
             splits = ['train', 'test']
- 
+
         abbrev = self._collection_abbrev(collection)
         base_path = f"Generative/{collection}/{group}/GEN"
- 
+
         file_mapping = {}
         for split in splits:
             key = f"df_{split}"
             filename = f"df_{split}_{abbrev}-{group}.csv"
             file_mapping[key] = f"{base_path}/{filename}"
- 
+
         data = {}
- 
+
         if self.verbose:
             print(f"Loading Generative dataset: {collection}/{group}")
- 
+
         for key, file_path in tqdm(file_mapping.items(),
                                    desc="Downloading files",
                                    disable=not self.verbose):
@@ -238,28 +266,78 @@ class FriendOrFoeDataLoader:
                     cache_dir=self.cache_dir
                 )
                 data[key] = pd.read_csv(local_path)
- 
+
                 if self.verbose:
                     print(f"  {key} shape: {data[key].shape}")
- 
+
             except Exception as e:
                 warnings.warn(f"Failed to load {key} from {file_path}: {e}")
- 
+
         return data
 
-    def load_cluster_dataset(self, collection: str, group: str, splits: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
-        ...
-        ''' ... '''
+    # ------------------------------------------------------------------
+    # load_clustering_dataset
+    # ------------------------------------------------------------------
+
+    def load_clustering_dataset(self, collection: str, group: str, dataset: str) -> Dict[str, np.ndarray]:
+        '''
+        Load a Clustering dataset (stored as .npy files).
+
+        File naming convention:
+            {coll_abbrev}_{dataset}-{group}.npy   e.g. AG_US-I-100.npy
+
+        Args:
+            collection: Collection type ('AGORA' or 'CARVEME')
+            group: Group identifier ('50' or '100')
+            dataset: Dataset identifier (e.g., 'US-I', 'US-II')
+
+        Returns:
+            Dictionary with key 'data' mapping to a numpy array.
+
+        Example:
+            >>> loader = FriendOrFoeDataLoader()
+            >>> data = loader.load_clustering_dataset('AGORA', '50', 'US-II')
+            >>> X = data['data']
+        '''
+        if collection not in self.COLLECTIONS:
+            raise ValueError(f"Collection must be one of {self.COLLECTIONS}")
+        if group not in self.GROUPS:
+            raise ValueError(f"Group must be one of {self.GROUPS}")
+
+        abbrev = self._collection_abbrev(collection)
+        base_path = f"Clustering/{collection}/{group}/{dataset}"
+        filename = f"{abbrev}_{dataset}-{group}.npy"
+        file_path = f"{base_path}/{filename}"
+
+        if self.verbose:
+            print(f"Loading Clustering dataset: {collection}/{group}/{dataset}")
+            print(f"  File: {filename}")
+
+        try:
+            local_path = hf_hub_download(
+                repo_id=self.REPO_ID,
+                filename=file_path,
+                repo_type="dataset",
+                cache_dir=self.cache_dir
+            )
+            array = np.load(local_path, allow_pickle=True)
+
+            if self.verbose:
+                print(f"  Array shape: {array.shape}, dtype: {array.dtype}")
+
+            return {"data": array}
+
+        except Exception as e:
+            warnings.warn(f"Failed to load clustering dataset from {file_path}: {e}")
+            return {}
     
-    def load_multiple_datasets(self, configurations: List[Tuple[str, str, str, str]]) -> Dict[str, Dict[str, pd.DataFrame]]:
+    def load_multiple_datasets(self, configurations: List[Tuple[str, str, str, str]]) -> Dict[str, Dict]:
         '''
         Load multiple datasets at once.
-        
         Args:
-            configurations: List of (task, collection, group, dataset) tuples
-            
-        Outputs:
-            Dictionary mapping configuration strings to dataset dictionaries
+            configurations: List of (task, collection, group, dataset) tuples.
+        Returns:
+            Dictionary mapping "{task}/{collection}/{group}/{dataset}" to dataset dicts.
         '''
         all_data = {}
         
@@ -268,65 +346,82 @@ class FriendOrFoeDataLoader:
             config_key = f"{task}/{collection}/{group}/{dataset}"
             
             try:
-                all_data[config_key] = self.load_dataset(task, collection, group, dataset)
+                if task in ("Classification", "Regression"):
+                    all_data[config_key] = self.load_dataset(task, collection, group, dataset)
+                elif task == "Generative":
+                    all_data[config_key] = self.load_generative_dataset(collection, group)
+                elif task == "Clustering":
+                    all_data[config_key] = self.load_clustering_dataset(collection, group, dataset)
+                else:
+                    warnings.warn(f"Unsupported task '{task}' for {config_key}; skipping.")
             except Exception as e:
                 warnings.warn(f"Failed to load {config_key}: {e}")
                 
         return all_data
-    
+
     def get_dataset_info(self, task: str, collection: str, group: str, dataset: str) -> Dict:
         '''
-        Get information about a specific dataset without loading it.
-        
-        Args:
-            task: Task type
-            collection: Collection type  
-            group: Group identifier
-            dataset: Dataset identifier
-            
-        Outputs:
-            Dictionary with dataset metadata
+        Dictionary with dataset metadata.
         '''
         try:
-            # Load just a small sample to get info
-            base_path = f"{task}/{collection}/{group}/{dataset}"
-            sample_file = f"{base_path}/X_train_{dataset}-{group}.csv"
-            
-            local_path = hf_hub_download(
-                repo_id=self.REPO_ID,
-                filename=sample_file, 
-                repo_type="dataset",
-                cache_dir=self.cache_dir
-            )
-            
-            df = pd.read_csv(local_path, nrows=5)  # Just read header + few rows
-            
-            return {
-                "task": task,
-                "collection": collection, 
-                "group": group,
-                "dataset": dataset,
-                "n_features": len(df.columns),
-                "feature_names": list(df.columns),
-                "sample_shape": df.shape,
-                "dtypes": df.dtypes.to_dict()
-            }
-            
+            abbrev = self._collection_abbrev(collection)
+
+            if task in ("Classification", "Regression"):
+                base_path = f"{task}/{collection}/{group}/{dataset}"
+                sample_file = f"{base_path}/X_train_{dataset}-{group}.csv"
+                local_path = hf_hub_download(
+                    repo_id=self.REPO_ID, filename=sample_file,
+                    repo_type="dataset", cache_dir=self.cache_dir
+                )
+                df = pd.read_csv(local_path, nrows=5)
+                return {
+                    "task": task, "collection": collection,
+                    "group": group, "dataset": dataset,
+                    "n_features": len(df.columns),
+                    "feature_names": list(df.columns),
+                    "sample_shape": df.shape,
+                    "dtypes": df.dtypes.to_dict(),
+                }
+
+            elif task == "Generative":
+                base_path = f"Generative/{collection}/{group}/GEN"
+                sample_file = f"{base_path}/df_train_{abbrev}-{group}.csv"
+                local_path = hf_hub_download(
+                    repo_id=self.REPO_ID, filename=sample_file,
+                    repo_type="dataset", cache_dir=self.cache_dir
+                )
+                df = pd.read_csv(local_path, nrows=5)
+                return {
+                    "task": task, "collection": collection,
+                    "group": group, "dataset": "GEN",
+                    "n_features": len(df.columns),
+                    "feature_names": list(df.columns),
+                    "sample_shape": df.shape,
+                    "dtypes": df.dtypes.to_dict(),
+                }
+
+            elif task == "Clustering":
+                base_path = f"Clustering/{collection}/{group}/{dataset}"
+                sample_file = f"{base_path}/{abbrev}_{dataset}-{group}.npy"
+                local_path = hf_hub_download(
+                    repo_id=self.REPO_ID, filename=sample_file,
+                    repo_type="dataset", cache_dir=self.cache_dir
+                )
+                array = np.load(local_path, allow_pickle=True)
+                return {
+                    "task": task, "collection": collection,
+                    "group": group, "dataset": dataset,
+                    "shape": array.shape,
+                    "dtype": str(array.dtype),
+                }
+
+            else:
+                return {"error": f"get_dataset_info not supported for task '{task}'"}
+
         except Exception as e:
             return {"error": str(e)}
     
     def create_train_test_split(self, data: Dict[str, pd.DataFrame], test_size: float = 0.2, random_state: int = 4221) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-        '''
-        Create a simple train-test split from loaded data.
-        
-        Args:
-            data: Dictionary containing the loaded dataset
-            test_size: Proportion of data to use for testing
-            random_state: Random seed for reproducibility
-            
-        Outputs:
-            Tuple of (X_train, X_test, y_train, y_test)
-        '''
         X_combined = []
         y_combined = []
         
@@ -343,12 +438,16 @@ class FriendOrFoeDataLoader:
         
         return train_test_split(X, y, test_size=test_size, random_state=random_state)
     
+    # ------------------------------------------------------------------
+    # download_all_datasets
+    # ------------------------------------------------------------------
+
     def download_all_datasets(self, output_dir: str = "FOFdata"):
         '''
-        Download all datasets and organize them in the expected directory structure.
+        Download all datasets and organise them in the expected directory structure.
         
         Args:
-            output_dir: Directory to save all datasets
+            output_dir: Root directory to save all datasets.
         '''
         output_path = Path(output_dir)
         output_path.mkdir(exist_ok=True)
@@ -360,47 +459,88 @@ class FriendOrFoeDataLoader:
         
         for dataset_key in tqdm(datasets.keys(), desc="Downloading datasets"):
             task, collection, group, dataset = dataset_key.split('/')
-            
-            # Create directory structure
             dataset_dir = output_path / task / collection / group / dataset / "csv"
             dataset_dir.mkdir(parents=True, exist_ok=True)
             
             try:
-                data = self.load_dataset(task, collection, group, dataset)
-                
-                # Save each split
-                for key, df in data.items():
-                    filename = f"{key}_{dataset}.csv"
-                    df.to_csv(dataset_dir / filename, index=False)
-                    
+                if task in ("Classification", "Regression"):
+                    data = self.load_dataset(task, collection, group, dataset)
+                    for key, df in data.items():
+                        df.to_csv(dataset_dir / f"{key}_{dataset}.csv", index=False)
+
+                elif task == "Generative":
+                    data = self.load_generative_dataset(collection, group)
+                    for key, df in data.items():
+                        df.to_csv(dataset_dir / f"{key}.csv", index=False)
+
+                elif task == "Clustering":
+                    data = self.load_clustering_dataset(collection, group, dataset)
+                    npy_dir = output_path / task / collection / group / dataset
+                    npy_dir.mkdir(parents=True, exist_ok=True)
+                    if "data" in data:
+                        abbrev = self._collection_abbrev(collection)
+                        np.save(npy_dir / f"{abbrev}_{dataset}-{group}.npy", data["data"])
+
             except Exception as e:
                 warnings.warn(f"Failed to download {dataset_key}: {e}")
 
 
 # Utility functions
-def quick_load(task: str = "Classification", collection: str = "AGORA", group: str = "100", dataset: str = "BC-I") -> Dict[str, pd.DataFrame]:
+def quick_load(task: str = "Classification", collection: str = "AGORA", group: str = "100", dataset: str = "BC-I") -> Dict:
     '''
-    Quick utility function to load a dataset with default parameters.
-    
+    Quick utility to load a Classification or Regression dataset.
+
     Args:
         task: Task type (default: 'Classification')
         collection: Collection type (default: 'AGORA') 
         group: Group identifier (default: '100')
         dataset: Dataset identifier (default: 'BC-I')
         
-    Outputs:
-        Dictionary containing the loaded dataset
+    Returns:
+        Dictionary containing the loaded dataset splits.
     '''
     loader = FriendOrFoeDataLoader(verbose=False)
     return loader.load_dataset(task, collection, group, dataset)
+
+
+def quick_load_generative(collection: str = "AGORA", group: str = "100") -> Dict:
+    '''
+    Quick utility to load a Generative dataset.
+
+    Args:
+        collection: Collection type (default: 'AGORA')
+        group: Group identifier (default: '100')
+
+    Returns:
+        Dictionary with 'df_train' and 'df_test' DataFrames.
+    '''
+    loader = FriendOrFoeDataLoader(verbose=False)
+    return loader.load_generative_dataset(collection, group)
+
+
+def quick_load_clustering(collection: str = "AGORA", group: str = "50", dataset: str = "US-II") -> Dict:
+    '''
+    Quick utility to load a Clustering dataset.
+
+    Args:
+        collection: Collection type (default: 'AGORA')
+        group: Group identifier (default: '50')
+        dataset: Dataset identifier (default: 'US-II')
+
+    Returns:
+        Dictionary with key 'data' containing a numpy array.
+    '''
+    loader = FriendOrFoeDataLoader(verbose=False)
+    return loader.load_clustering_dataset(collection, group, dataset)
 
 
 def list_all_datasets() -> Dict[str, List[str]]:
     '''
     Quick utility to list all available datasets.
     
-    Outputs:
-        Dictionary mapping dataset identifiers to file paths
+    Returns:
+        Dictionary mapping dataset identifiers to file paths.
     '''
     loader = FriendOrFoeDataLoader(verbose=False)
     return loader.list_available_datasets()
+    
