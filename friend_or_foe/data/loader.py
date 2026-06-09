@@ -4,7 +4,6 @@ Friend-Or-Foe Data Loader Module
 This module provides utilities for loading and managing the Friend-Or-Foe datasets
 from the offiical Hugging Face repo: https://huggingface.co/datasets/powidla/Friend-Or-Foe.
 """
-
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -43,6 +42,14 @@ class FriendOrFoeDataLoader:
     REGRESSION_DATASETS = [
         "GR-I", "GR-II", "GR-III", "GR-IV"
     ]
+    # TODO
+    CLUSTERING_DATASETS = [
+        
+    ]
+    
+    GENERATIVE_DATASETS = [
+        
+    ]
     
     def __init__(self, cache_dir: Optional[str] = None, verbose: bool = True):
         '''
@@ -72,7 +79,7 @@ class FriendOrFoeDataLoader:
                 warnings.warn(f"Could not fetch repo files: {e}")
                 self._repo_files = []
         return self._repo_files
-    
+     
     def list_available_datasets(self, task: Optional[str] = None, 
                               collection: Optional[str] = None,
                               group: Optional[str] = None) -> Dict[str, List[str]]:
