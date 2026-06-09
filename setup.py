@@ -8,7 +8,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="friend-or-foe",
-    version="1.0.1",
+    version="0.0.1",
     description="A collection of microbial datasets obtained from metabolic modeling",
     long_description=long_description,
     long_description_content_type="text/markdown",
