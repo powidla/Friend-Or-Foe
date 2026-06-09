@@ -39,6 +39,7 @@ dependencies = [
     "matplotlib==3.10.1",
     "requests==2.32.3",
     "pytorch-tabnet==4.1.0",
+    "catboost>=1.2.0",
     "huggingface_hub>=0.20.0",
     "delu>=0.0.26",
     "rtdl_revisiting_models>=0.0.2",
