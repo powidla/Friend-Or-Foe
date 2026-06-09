@@ -204,10 +204,52 @@ class FriendOrFoeDataLoader:
         return data
 
     def load_gen_dataset(self, collection: str, group: str, splits: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
-        ...
+        ''' ... '''
+        if collection not in self.COLLECTIONS:
+            raise ValueError(f"Collection must be one of {self.COLLECTIONS}")
+        if group not in self.GROUPS:
+            raise ValueError(f"Group must be one of {self.GROUPS}")
+ 
+        if splits is None:
+            splits = ['train', 'test']
+ 
+        abbrev = self._collection_abbrev(collection)
+        base_path = f"Generative/{collection}/{group}/GEN"
+ 
+        file_mapping = {}
+        for split in splits:
+            key = f"df_{split}"
+            filename = f"df_{split}_{abbrev}-{group}.csv"
+            file_mapping[key] = f"{base_path}/{filename}"
+ 
+        data = {}
+ 
+        if self.verbose:
+            print(f"Loading Generative dataset: {collection}/{group}")
+ 
+        for key, file_path in tqdm(file_mapping.items(),
+                                   desc="Downloading files",
+                                   disable=not self.verbose):
+            try:
+                local_path = hf_hub_download(
+                    repo_id=self.REPO_ID,
+                    filename=file_path,
+                    repo_type="dataset",
+                    cache_dir=self.cache_dir
+                )
+                data[key] = pd.read_csv(local_path)
+ 
+                if self.verbose:
+                    print(f"  {key} shape: {data[key].shape}")
+ 
+            except Exception as e:
+                warnings.warn(f"Failed to load {key} from {file_path}: {e}")
+ 
+        return data
 
     def load_cluster_dataset(self, collection: str, group: str, splits: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
         ...
+        ''' ... '''
     
     def load_multiple_datasets(self, configurations: List[Tuple[str, str, str, str]]) -> Dict[str, Dict[str, pd.DataFrame]]:
         '''
