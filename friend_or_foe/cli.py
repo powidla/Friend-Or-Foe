@@ -22,36 +22,36 @@ def main():
         description="Friend-Or-Foe: Dataset Tools",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples to use:
-  # List available datasets
-  friend-or-foe list-datasets
-  
-  # Download a specific dataset
-  friend-or-foe download --task Classification --collection AGORA --group 100 --dataset BC-I
-  
-  # Download all datasets
-  friend-or-foe download-all --output-dir ./FOFdata
-  
-  # Run experiments with custom parameters
-  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model xgboost --xgb-n-estimators 500 --xgb-learning-rate 0.05
-  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model lightgbm --lgb-num-leaves 50 --lgb-learning-rate 0.08
-  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model catboost --cb-iterations 300 --cb-depth 8
-  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model tabnet --tabnet-n-d 64 --tabnet-n-steps 5
-  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model ft_transformer --ft-d-token 256 --ft-n-blocks 4
-  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model tabm --tabm-lr 0.001 --tabm-max-epochs 200
-  
-  # Use custom parameters from JSON file
-  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model xgboost --params ./xgb_params.json
-  
-  # Use custom parameters from JSON string
-  friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model xgboost --params '{"n_estimators": 300, "max_depth": 8}'
-  
-  # Perform SHAP analysis on trained models
-  friend-or-foe shap --model-path ./model_xgboost.pkl --model-type xgboost --task Classification --collection AGORA --group 100 --dataset BC-I
-  friend-or-foe shap --model-path ./model_lightgbm.pkl --model-type lightgbm --task Classification --collection AGORA --group 100 --dataset BC-I --plot-type waterfall
-  
-  # Get dataset information
-  friend-or-foe info --task Classification --collection AGORA --group 100 --dataset BC-I
+      Examples to use:
+      # List available datasets
+      friend-or-foe list-datasets
+      
+      # Download a specific dataset
+      friend-or-foe download --task Classification --collection AGORA --group 100 --dataset BC-I
+      
+      # Download all datasets
+      friend-or-foe download-all --output-dir ./FOFdata
+      
+      # Run experiments with custom parameters
+      friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model xgboost --xgb-n-estimators 500 --xgb-learning-rate 0.05
+      friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model lightgbm --lgb-num-leaves 50 --lgb-learning-rate 0.08
+      friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model catboost --cb-iterations 300 --cb-depth 8
+      friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model tabnet --tabnet-n-d 64 --tabnet-n-steps 5
+      friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model ft_transformer --ft-d-token 256 --ft-n-blocks 4
+      friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model tabm --tabm-lr 0.001 --tabm-max-epochs 200
+      
+      # Use custom parameters from JSON file
+      friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model xgboost --params ./xgb_params.json
+      
+      # Use custom parameters from JSON string
+      friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model xgboost --params '{"n_estimators": 300, "max_depth": 8}'
+      
+      # Perform SHAP analysis on trained models
+      friend-or-foe shap --model-path ./model_xgboost.pkl --model-type xgboost --task Classification --collection AGORA --group 100 --dataset BC-I
+      friend-or-foe shap --model-path ./model_lightgbm.pkl --model-type lightgbm --task Classification --collection AGORA --group 100 --dataset BC-I --plot-type waterfall
+      
+      # Get dataset information
+      friend-or-foe info --task Classification --collection AGORA --group 100 --dataset BC-I
         """
     )
     
