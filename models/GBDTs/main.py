@@ -71,8 +71,7 @@ def create_confusion_matrix(y_true, y_pred):
         pd.DataFrame: A confusion matrix as a pandas DataFrame.
     '''
     cm = confusion_matrix(y_true, y_pred)
-    cm_df = pd.DataFrame(cm, index=["True Negative", "True Positive"],
-                             columns=["Predicted Negative", "Predicted Positive"])
+    cm_df = pd.DataFrame(cm, index=["True Negative", "True Positive"], columns=["Predicted Negative", "Predicted Positive"])
     return cm_df
 
 
@@ -91,7 +90,7 @@ def score_metrics(y_true, y_pred, y_prob):
         "Precision": precision_score(y_true, y_pred),
         "Recall": recall_score(y_true, y_pred),
         "F1 Score": f1_score(y_true, y_pred),
-        "MCC": matthews_corrcoef(y_true, y_pred),
+        "MCC": matthews_corrcoef(y_true, y_pred)
     }
     # PR AUC
     precision, recall, _ = precision_recall_curve(y_true, y_prob)
@@ -99,8 +98,7 @@ def score_metrics(y_true, y_pred, y_prob):
     return metrics
 
 
-def train_and_evaluate_catboost(X_train, y_train, X_val, y_val, X_test, y_test,
-                                output_dir="catboost_results", seed=4221):
+def train_and_evaluate_catboost(X_train, y_train, X_val, y_val, X_test, y_test, output_dir="catboost_results", seed=4221):
     os.makedirs(output_dir, exist_ok=True)
 
     train_pool = Pool(X_train, y_train)
@@ -114,16 +112,14 @@ def train_and_evaluate_catboost(X_train, y_train, X_val, y_val, X_test, y_test,
         loss_function='Logloss',
         eval_metric='AUC',
         random_seed=seed,
-        verbose=100,
+        verbose=100
     )
 
     model.fit(train_pool, eval_set=val_pool)
 
     y_pred = model.predict(X_test)
     y_proba = model.predict_proba(X_test)[:, 1]
-
     metrics = score_metrics(y_test, y_pred, y_proba)
-
     with open(os.path.join(output_dir, "catboost_metrics.json"), 'w') as f:
         json.dump(metrics, f, indent=4)
 
@@ -135,8 +131,8 @@ def train_and_evaluate_catboost(X_train, y_train, X_val, y_val, X_test, y_test,
 
     return metrics
 
-def train_and_evaluate_xgboost(X_train, y_train, X_val, y_val, X_test, y_test,
-                               output_dir="xgboost_results", seed=4221):
+
+def train_and_evaluate_xgboost(X_train, y_train, X_val, y_val, X_test, y_test, output_dir="xgboost_results", seed=4221):
     os.makedirs(output_dir, exist_ok=True)
 
     model = XGBClassifier(
@@ -171,8 +167,7 @@ def train_and_evaluate_xgboost(X_train, y_train, X_val, y_val, X_test, y_test,
     return metrics
 
 
-def train_and_evaluate_lightgbm(X_train, y_train, X_val, y_val, X_test, y_test,
-                                output_dir="lightgbm_results", seed=4221):
+def train_and_evaluate_lightgbm(X_train, y_train, X_val, y_val, X_test, y_test, output_dir="lightgbm_results", seed=4221):
     os.makedirs(output_dir, exist_ok=True)
 
     model = LGBMClassifier(
