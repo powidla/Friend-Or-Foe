@@ -60,12 +60,12 @@ y_train = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=y_train_ID, repo
 y_val = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=y_val_ID, repo_type="dataset"))
 y_test = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=y_test_ID, repo_type="dataset"))
 
-X_train = X_train_csv.to_numpy()
-X_val = X_val_csv.to_numpy()
-X_test = X_test_csv.to_numpy()
-y_train = y_train_csv.to_numpy()
-y_val = y_val_csv.to_numpy()
-y_test = y_test_csv.to_numpy()
+X_train = X_train.to_numpy()
+X_val = X_val.to_numpy()
+X_test = X_test.to_numpy()
+y_train = y_train.to_numpy()
+y_val = y_val.to_numpy()
+y_test = y_test.to_numpy()
 
 
 y_train = y_train.reshape(-1)
