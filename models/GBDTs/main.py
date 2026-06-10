@@ -193,8 +193,7 @@ def train_and_evaluate_lightgbm(X_train, y_train, X_val, y_val, X_test, y_test, 
     model.fit(
         X_train, y_train,
         eval_set=[(X_val, y_val)],
-        eval_metric='auc',
-        verbose=100
+        eval_metric='auc'
     )
 
     y_pred = model.predict(X_test)
