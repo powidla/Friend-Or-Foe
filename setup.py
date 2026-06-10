@@ -30,7 +30,7 @@ setup(
     python_requires=">=3.8",
     install_requires=requirements,
     extras_require={
-        "dev": ["pytest", "black", "flake8"],
+        "dev": ["black", "flake8"],
         "docs": ["sphinx", "sphinx-rtd-theme"],
     },
     entry_points={
