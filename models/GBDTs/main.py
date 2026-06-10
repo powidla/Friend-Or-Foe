@@ -5,7 +5,7 @@ import shutil
 import joblib
 import pickle
 import json
-
+from huggingface_hub import hf_hub_download
 # ml frameworks
 from sklearn.model_selection import train_test_split
 from sklearn.inspection import permutation_importance
@@ -43,12 +43,22 @@ from lightgbm import LGBMClassifier
 device = 'cpu'
 print(f"Using device: {device}")
 
-X_train_csv = pd.read_csv("FOFdata/Classification/AGORA/100/BC-I/csv/X_train_BC-I-100.csv")
-X_val_csv = pd.read_csv("FOFdata/Classification/AGORA/100/BC-I/csv/X_val_BC-I-100.csv")
-X_test_csv = pd.read_csv("FOFdata/Classification/AGORA/100/BC-I/csv/X_test_BC-I-100.csv")
-y_train_csv = pd.read_csv("FOFdata/Classification/AGORA/100/BC-I/csv/y_train_BC-I-100.csv")
-y_val_csv = pd.read_csv("FOFdata/Classification/AGORA/100/BC-I/csv/y_val_BC-I-100.csv")
-y_test_csv = pd.read_csv("FOFdata/Classification/AGORA/100/BC-I/csv/y_test_BC-I-100.csv")
+REPO_ID = "powidla/Friend-Or-Foe"
+X_train_ID = "Classification/AGORA/100/BC-I/X_train_BC-I-100.csv"
+X_val_ID = "Classification/AGORA/100/BC-I/X_val_BC-I-100.csv"
+X_test_ID = "Classification/AGORA/100/BC-I/X_test_BC-I-100.csv"
+
+y_train_ID = "Classification/AGORA/100/BC-I/y_train_BC-I-100.csv"
+y_val_ID = "Classification/AGORA/100/BC-I/y_val_BC-I-100.csv"
+y_test_ID = "Classification/AGORA/100/BC-I/y_test_BC-I-100.csv"
+
+X_train = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=X_train_ID, repo_type="dataset"))
+X_val = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=X_val_ID, repo_type="dataset"))
+X_test = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=X_test_ID, repo_type="dataset"))
+
+y_train = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=y_train_ID, repo_type="dataset"))
+y_val = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=y_val_ID, repo_type="dataset"))
+y_test = pd.read_csv(hf_hub_download(repo_id=REPO_ID, filename=y_test_ID, repo_type="dataset"))
 
 X_train = X_train_csv.to_numpy()
 X_val = X_val_csv.to_numpy()
