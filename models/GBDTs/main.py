@@ -1,19 +1,12 @@
 import numpy as np
 import pandas as pd
 import os
-import shutil
 import joblib
-import pickle
 import json
 from huggingface_hub import hf_hub_download
 # ml frameworks
-from sklearn.model_selection import train_test_split
-from sklearn.inspection import permutation_importance
-from sklearn.datasets import make_classification # for test of funcs
-import matplotlib.pyplot as plt
 from sklearn.metrics import (
     confusion_matrix,
-    classification_report,
     accuracy_score,
     roc_auc_score,
     precision_score,
@@ -21,20 +14,12 @@ from sklearn.metrics import (
     f1_score,
     matthews_corrcoef,
     precision_recall_curve,
-    auc,
-    RocCurveDisplay,
-    PrecisionRecallDisplay,
+    auc
 )
-
-#time management
-from tqdm import tqdm
-import time
 
 #stats
 from scipy.stats import wasserstein_distance
 from scipy.spatial.distance import cdist
-from itertools import combinations
-
 
 from catboost import CatBoostClassifier, Pool
 from xgboost import XGBClassifier
