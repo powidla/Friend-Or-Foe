@@ -521,7 +521,68 @@ def handle_cache(args):
     '''
     Handle cache command — list downloaded locally.
     '''
-    ...
+    data_dir = Path(args.data_dir)
+ 
+    if not data_dir.exists():
+        print(f"Directory not found: {data_dir}")
+        print("No datasets have been downloaded yet.")
+        return
+     
+    found = {
+        'Classification': [],
+        'Regression': [],
+        'Generative': [],
+        'Clustering': [],
+        'Other': []}
+ 
+    total_size_bytes = 0
+    # Iterate over dir
+    for task_dir in sorted(data_dir.iterdir()):
+        if not task_dir.is_dir():
+            continue
+        task_name = task_dir.name
+        for collection_dir in sorted(task_dir.iterdir()):
+            if not collection_dir.is_dir():
+                continue
+            for group_dir in sorted(collection_dir.iterdir()):
+                if not group_dir.is_dir():
+                    continue
+                for dataset_dir in sorted(group_dir.iterdir()):
+                    if not dataset_dir.is_dir():
+                        continue
+
+                    files = list(dataset_dir.rglob('*'))
+                    data_files = [f for f in files if f.is_file() and f.suffix in ('.csv', '.npy')]
+                    if not data_files:
+                        continue
+ 
+                    size_bytes = sum(f.stat().st_size for f in data_files)
+                    total_size_bytes += size_bytes
+                    size_str = _format_size(size_bytes)
+                    entry = (
+                        f"{collection_dir.name}/{group_dir.name}/{dataset_dir.name}",
+                        len(data_files),
+                        size_str
+                    )
+                    bucket = task_name if task_name in found else 'Other'
+                    found[bucket].append(entry)
+ 
+    # Print results
+    total_datasets = sum(len(v) for v in found.values())
+    if total_datasets == 0:
+        print("No downloaded datasets found.")
+        return
+    for task_name, entries in found.items():
+        if not entries:
+            continue
+        print(f"\n{task_name} ({len(entries)} dataset{'s' if len(entries) != 1 else ''}):")
+        print(f"  {'Path':<45} {'Files':>6}  {'Size':>10}")
+        print(f"  {'-'*45}  {'-'*6}  {'-'*10}")
+        for path, n_files, size in entries:
+            print(f"  {path:<45} {n_files:>6}  {size:>10}")
+    print()
+    print("-" * 60)
+    print(f"Total: {total_datasets} dataset(s), {_format_size(total_size_bytes)}")
 
 
 def handle_experiment(loader: FriendOrFoeDataLoader, args):
