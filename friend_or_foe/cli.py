@@ -70,6 +70,20 @@ def main():
     download_parser.add_argument('--group', required=True, choices=['50', '100'])
     download_parser.add_argument('--dataset', required=True, help='Dataset identifier (e.g., BC-I)')
     download_parser.add_argument('--output-dir', default='./data', help='Output directory')
+
+    # Download generative
+    dl_gen_parser = subparsers.add_parser('download-generative', help='Download a Generative dataset')
+    dl_gen_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
+    dl_gen_parser.add_argument('--group', required=True, choices=['50', '100'])
+    dl_gen_parser.add_argument('--splits', nargs='+', default=['train', 'test'], help='Splits to download (default: train test)')
+    dl_gen_parser.add_argument('--output-dir', default='./data', help='Output directory')
+ 
+    # Download clustering
+    dl_clust_parser = subparsers.add_parser('download-clustering', help='Download a Clustering dataset')
+    dl_clust_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
+    dl_clust_parser.add_argument('--group', required=True, choices=['50', '100'])
+    dl_clust_parser.add_argument('--dataset', required=True, help='Dataset identifier (e.g., US-I, US-II)')
+    dl_clust_parser.add_argument('--output-dir', default='./data', help='Output directory')
     
     # Download all datasets command
     download_all_parser = subparsers.add_parser('download-all', help='Download all datasets')
@@ -77,10 +91,14 @@ def main():
     
     # Dataset info command
     info_parser = subparsers.add_parser('info', help='Get information about a dataset')
-    info_parser.add_argument('--task', required=True, choices=['Classification', 'Regression'])
+    info_parser.add_argument('--task', required=True, choices=['Classification', 'Regression', 'Generative', 'Clustering'])
     info_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
     info_parser.add_argument('--group', required=True, choices=['50', '100'])
     info_parser.add_argument('--dataset', required=True, help='Dataset identifier')
+
+    # Cache locla files
+    cache_parser = subparsers.add_parser('cache', help='List datasets that have been downloaded locally')
+    cache_parser.add_argument('--data-dir', default='./FOFdata', help='Root directory (default: ./FOFdata)')
     
     # SHAP analysis command
     shap_parser = subparsers.add_parser('shap', help='Perform SHAP analysis on a trained model')
@@ -159,6 +177,7 @@ def main():
     exp_parser.add_argument('--tabm-patience', type=int, help='TabM: Early stopping patience')
     exp_parser.add_argument('--tabm-batch-size', type=int, help='TabM: Batch size')
     exp_parser.add_argument('--tabm-eval-batch-size', type=int, help='TabM: Evaluation batch size')
+    
     # For test
     test_parser = subparsers.add_parser('test', help='Run comprehensive test suite')
     test_parser.add_argument('--models', nargs='+', choices=['xgboost', 'lightgbm', 'catboost', 'tabnet', 'ft_transformer', 'tabm'], help='Test specific models only')
@@ -178,6 +197,12 @@ def main():
             handle_list_datasets(loader, args)
         elif args.command == 'download':
             handle_download(loader, args)
+        elif args.command == 'download_generative':
+            handle_download(loader, args)
+        elif args.command == 'download_clustering':
+            handle_download(loader, args)
+        elif args.command == 'check':
+            handle_cache(args)
         elif args.command == 'download-all':
             handle_download_all(loader, args)
         elif args.command == 'info':
@@ -433,6 +458,20 @@ def handle_download(loader: FriendOrFoeDataLoader, args):
     print(f"Dataset saved to: {output_dir}")
 
 
+def handle_download_generative(loader: FriendOrFoeDataLoader, args):
+    '''
+    Handle downloading generative command.
+    '''
+    ...
+
+
+def handle_download_clustering(loader: FriendOrFoeDataLoader, args):
+    '''
+    Handle downloading clustering command.
+    '''
+    ...
+
+
 def handle_download_all(loader: FriendOrFoeDataLoader, args):
     '''
     Handle download-all command.
@@ -467,6 +506,22 @@ def handle_info(loader: FriendOrFoeDataLoader, args):
     
     if len(info['feature_names']) > 10:
         print(f"  ... and {len(info['feature_names']) - 10} more features")
+
+
+def _format_size(size_bytes):
+    '''Return a HR format.'''
+    for unit in ('B', 'KB', 'MB', 'GB'):
+        if size_bytes < 1024:
+            return f"{size_bytes:.1f} {unit}"
+        size_bytes /= 1024
+    return f"{size_bytes:.1f} TB"
+
+
+def handle_cache(args):
+    '''
+    Handle cache command — list downloaded locally.
+    '''
+    ...
 
 
 def handle_experiment(loader: FriendOrFoeDataLoader, args):
