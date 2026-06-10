@@ -8,6 +8,7 @@ import argparse
 import sys
 from pathlib import Path
 import json
+import numpy as np # for loading clustering data
 import pandas as pd
 import time
 from .data.loader import FriendOrFoeDataLoader
@@ -462,14 +463,54 @@ def handle_download_generative(loader: FriendOrFoeDataLoader, args):
     '''
     Handle downloading generative command.
     '''
-    ...
+    print(f"Downloading Generative dataset: {args.collection}/{args.group}")
+ 
+    data = loader.load_generative_dataset(
+        collection=args.collection,
+        group=args.group,
+        splits=args.splits
+    )
+ 
+    if not data:
+        print("No data returned. Check your collection/group arguments.")
+        return
+ 
+    output_dir = Path(args.output_dir) / "Generative" / args.collection / args.group / "GEN"
+    output_dir.mkdir(parents=True, exist_ok=True)
+ 
+    for key, df in data.items():
+        filepath = output_dir / f"{key}.csv"
+        df.to_csv(filepath, index=False)
+        print(f"Saved: {filepath}  {df.shape}")
+ 
+    print(f"Dataset saved to: {output_dir}")
 
 
 def handle_download_clustering(loader: FriendOrFoeDataLoader, args):
     '''
     Handle downloading clustering command.
     '''
-    ...
+    print(f"Downloading Clustering dataset: {args.collection}/{args.group}/{args.dataset}")
+ 
+    data = loader.load_clustering_dataset(
+        collection=args.collection,
+        group=args.group,
+        dataset=args.dataset
+    )
+ 
+    if not data:
+        print("No data returned. Check your collection/group/dataset arguments.")
+        return
+ 
+    output_dir = Path(args.output_dir) / "Clustering" / args.collection / args.group / args.dataset
+    output_dir.mkdir(parents=True, exist_ok=True)
+ 
+    abbrev = loader._collection_abbrev(args.collection)
+    filepath = output_dir / f"{abbrev}_{args.dataset}-{args.group}.npy"
+    np.save(filepath, data['data'])
+    print(f"Saved: {filepath}  shape={data['data'].shape}")
+    
+    print(f"Dataset saved to: {output_dir}")
 
 
 def handle_download_all(loader: FriendOrFoeDataLoader, args):
