@@ -198,11 +198,11 @@ def main():
             handle_list_datasets(loader, args)
         elif args.command == 'download':
             handle_download(loader, args)
-        elif args.command == 'download_generative':
-            handle_download(loader, args)
-        elif args.command == 'download_clustering':
-            handle_download(loader, args)
-        elif args.command == 'check':
+        elif args.command == 'download-generative':
+            handle_download_generative(loader, args)
+        elif args.command == 'download-clustering':
+            handle_download_clustering(loader, args)
+        elif args.command == 'cache':
             handle_cache(args)
         elif args.command == 'download-all':
             handle_download_all(loader, args)
