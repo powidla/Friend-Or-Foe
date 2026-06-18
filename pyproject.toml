@@ -29,30 +29,46 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 
+# dependencies = [
+#     "tqdm==4.67.1",
+#     "rtdl-num-embeddings>=0.0.11", 
+#     "scikit-learn==1.6.1",
+#     "scipy>=1.15.2",
+#     "pandas==2.2.3",
+#     "numpy>=1.22.0,<2.3",
+#     "matplotlib==3.10.1",
+#     "requests==2.32.3",
+#     "pytorch-tabnet==4.1.0",
+#     "catboost>=1.2.0",
+#     "xgboost>=1.7.0",
+#     "lightgbm>=3.3.0",
+#     "huggingface_hub>=0.20.0",
+#     "delu>=0.0.26",
+#     "rtdl_revisiting_models>=0.0.2",
+#     "shap>=0.41.0",
+#     # "pytest>=9.0.0"
+# ]
+
 dependencies = [
     "tqdm==4.67.1",
     "rtdl-num-embeddings>=0.0.11", 
     "scikit-learn==1.6.1",
-    "scipy>=1.15.2",
+    "scipy==1.15.2",
     "pandas==2.2.3",
-    "numpy>=1.22.0,<2.3",
+    "numpy==2.1.2",
     "matplotlib==3.10.1",
     "requests==2.32.3",
     "pytorch-tabnet==4.1.0",
-    "catboost>=1.2.0",
-    "xgboost>=1.7.0",
-    "lightgbm>=3.3.0",
     "huggingface_hub>=0.20.0",
     "delu>=0.0.26",
     "rtdl_revisiting_models>=0.0.2",
     "shap>=0.41.0",
-    # "pytest>=9.0.0"
 ]
 
 [project.optional-dependencies]
 dev = [
-    # "pytest>=7.0.0",
-    # "pytest-cov>=4.0.0",
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
     "black>=23.0.0",
     "flake8>=6.0.0",
     "isort>=5.12.0",
