@@ -7,7 +7,7 @@
 
 echo "Running synth training on..."
 
-python main.py --tvae 
+python run_gen.py
 
 # Deactivate environment after execution
 mamba deactivate
