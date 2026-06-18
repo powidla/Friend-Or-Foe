@@ -60,7 +60,7 @@ def main():
     
     # List datasets command
     list_parser = subparsers.add_parser('list-datasets', help='List all available datasets')
-    list_parser.add_argument('--task', choices=['Classification', 'Regression'], help='Filter by task')
+    list_parser.add_argument('--task', choices=['Classification', 'Regression', 'Generative', 'Clustering'], help='Filter by task')
     list_parser.add_argument('--collection', choices=['AGORA', 'CARVEME'], help='Filter by collection')
     list_parser.add_argument('--group', choices=['50', '100'], help='Filter by group')
     
