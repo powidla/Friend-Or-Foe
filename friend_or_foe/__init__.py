@@ -5,7 +5,7 @@ This package provides easy access to microbial interaction datasets for machine 
 along with utilities and model implementations for predictive modeling of microbial interactions.
 '''
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 # Data utilities
 from .data.loader import FriendOrFoeDataLoader
