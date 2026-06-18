@@ -70,21 +70,21 @@ def main():
     download_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
     download_parser.add_argument('--group', required=True, choices=['50', '100'])
     download_parser.add_argument('--dataset', required=True, help='Dataset identifier (e.g., BC-I)')
-    download_parser.add_argument('--output-dir', default='./data', help='Output directory')
+    download_parser.add_argument('--output-dir', default='./FOFdata', help='Output directory')
 
     # Download generative
     dl_gen_parser = subparsers.add_parser('download-generative', help='Download a Generative dataset')
     dl_gen_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
     dl_gen_parser.add_argument('--group', required=True, choices=['50', '100'])
     dl_gen_parser.add_argument('--splits', nargs='+', default=['train', 'test'], help='Splits to download (default: train test)')
-    dl_gen_parser.add_argument('--output-dir', default='./data', help='Output directory')
+    dl_gen_parser.add_argument('--output-dir', default='./FOFdata', help='Output directory')
  
     # Download clustering
     dl_clust_parser = subparsers.add_parser('download-clustering', help='Download a Clustering dataset')
     dl_clust_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
     dl_clust_parser.add_argument('--group', required=True, choices=['50', '100'])
     dl_clust_parser.add_argument('--dataset', required=True, help='Dataset identifier (e.g., US-I, US-II)')
-    dl_clust_parser.add_argument('--output-dir', default='./data', help='Output directory')
+    dl_clust_parser.add_argument('--output-dir', default='./FOFdata', help='Output directory')
     
     # Download all datasets command
     download_all_parser = subparsers.add_parser('download-all', help='Download all datasets')
