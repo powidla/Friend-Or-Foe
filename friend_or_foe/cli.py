@@ -15,6 +15,9 @@ from .data.loader import FriendOrFoeDataLoader
 from .model.base import TabNetModel, XGBoostModel, LightGBMModel, CatBoostModel, FTTransformerModel, TabMModel
 from .test import run_all_tests
 
+# Tasks that use X/y split files (as opposed to Generative/Clustering)
+_SUPERVISED_TASKS = ('Classification', 'Regression', 'Transfer Learning')
+
 def main():
     '''
     Main CLI entry point for Friend-Or-Foe package.
@@ -26,15 +29,26 @@ def main():
       Examples to use:
       # List available datasets
       friend-or-foe list-datasets
-      
-      # Download a specific dataset
+
+      # List only Transfer Learning datasets
+      friend-or-foe list-datasets --task "Transfer Learning"
+
+      # Download a specific Classification dataset
       friend-or-foe download --task Classification --collection AGORA --group 100 --dataset BC-I
+
+      # Download a Regression dataset
+      friend-or-foe download --task Regression --collection AGORA --group 100 --dataset GR-I
+
+      # Download a Transfer Learning dataset
+      friend-or-foe download --task "Transfer Learning" --collection AGORA --group 100 --dataset TL-I
       
       # Download all datasets
       friend-or-foe download-all --output-dir ./FOFdata
       
       # Run experiments with custom parameters
       friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model xgboost --xgb-n-estimators 500 --xgb-learning-rate 0.05
+      friend-or-foe experiment --task Regression --collection AGORA --group 100 --dataset GR-I --model xgboost
+      friend-or-foe experiment --task "Transfer Learning" --collection AGORA --group 100 --dataset TL-I --model xgboost
       friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model lightgbm --lgb-num-leaves 50 --lgb-learning-rate 0.08
       friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model catboost --cb-iterations 300 --cb-depth 8
       friend-or-foe experiment --task Classification --collection AGORA --group 100 --dataset BC-I --model tabnet --tabnet-n-d 64 --tabnet-n-steps 5
@@ -53,6 +67,8 @@ def main():
       
       # Get dataset information
       friend-or-foe info --task Classification --collection AGORA --group 100 --dataset BC-I
+      friend-or-foe info --task Regression --collection AGORA --group 100 --dataset GR-I
+      friend-or-foe info --task "Transfer Learning" --collection AGORA --group 100 --dataset TL-I
         """
     )
     
@@ -60,16 +76,16 @@ def main():
     
     # List datasets command
     list_parser = subparsers.add_parser('list-datasets', help='List all available datasets')
-    list_parser.add_argument('--task', choices=['Classification', 'Regression', 'Generative', 'Clustering', 'Transfer Learning'], help='Filter by task')
+    list_parser.add_argument('--task', choices=['Classification', 'Regression', 'Transfer Learning', 'Generative', 'Clustering'], help='Filter by task')
     list_parser.add_argument('--collection', choices=['AGORA', 'CARVEME'], help='Filter by collection')
     list_parser.add_argument('--group', choices=['50', '100'], help='Filter by group')
     
-    # Download dataset command
-    download_parser = subparsers.add_parser('download', help='Download a specific dataset')
+    # Download dataset command  (Classification, Regression, Transfer)
+    download_parser = subparsers.add_parser('download', help='Download a Classification, Regression, or Transfer dataset')
     download_parser.add_argument('--task', required=True, choices=['Classification', 'Regression', 'Transfer Learning'])
     download_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
     download_parser.add_argument('--group', required=True, choices=['50', '100'])
-    download_parser.add_argument('--dataset', required=True, help='Dataset identifier (e.g., BC-I)')
+    download_parser.add_argument('--dataset', required=True, help='Dataset identifier (e.g., BC-I, GR-I, TL-I)')
     download_parser.add_argument('--output-dir', default='./FOFdata', help='Output directory')
 
     # Download generative
@@ -92,12 +108,12 @@ def main():
     
     # Dataset info command
     info_parser = subparsers.add_parser('info', help='Get information about a dataset')
-    info_parser.add_argument('--task', required=True, choices=['Classification', 'Regression', 'Generative', 'Clustering', 'Transfer Learning'])
+    info_parser.add_argument('--task', required=True, choices=['Classification', 'Regression', 'Transfer Learning', 'Generative', 'Clustering'])
     info_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
     info_parser.add_argument('--group', required=True, choices=['50', '100'])
     info_parser.add_argument('--dataset', required=True, help='Dataset identifier')
 
-    # Cache locla files
+    # Cache local files
     cache_parser = subparsers.add_parser('cache', help='List datasets that have been downloaded locally')
     cache_parser.add_argument('--data-dir', default='./FOFdata', help='Root directory (default: ./FOFdata)')
     
@@ -105,7 +121,7 @@ def main():
     shap_parser = subparsers.add_parser('shap', help='Perform SHAP analysis on a trained model')
     shap_parser.add_argument('--model-path', required=True, help='Path to saved model file')
     shap_parser.add_argument('--model-type', required=True, choices=['xgboost', 'lightgbm', 'catboost'], help='Type of model')
-    shap_parser.add_argument('--task', required=True, choices=['Classification', 'Regression'])
+    shap_parser.add_argument('--task', required=True, choices=['Classification', 'Regression', 'Transfer Learning'])
     shap_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
     shap_parser.add_argument('--group', required=True, choices=['50', '100'])
     shap_parser.add_argument('--dataset', required=True, help='Dataset identifier')
@@ -116,10 +132,10 @@ def main():
     
     # Experiment command with all models and custom parameters
     exp_parser = subparsers.add_parser('experiment', help='Run a quick experiment')
-    exp_parser.add_argument('--task', required=True, choices=['Classification', 'Regression'])
+    exp_parser.add_argument('--task', required=True, choices=['Classification', 'Regression', 'Transfer Learning'])
     exp_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
     exp_parser.add_argument('--group', required=True, choices=['50', '100'])
-    exp_parser.add_argument('--dataset', required=True, help='Dataset identifier')
+    exp_parser.add_argument('--dataset', required=True, help='Dataset identifier (e.g., BC-I, GR-I, TL-I)')
     exp_parser.add_argument('--model', default='xgboost', choices=['tabnet', 'xgboost', 'lightgbm', 'catboost', 'ft_transformer', 'tabm'], help='Model to use')
     exp_parser.add_argument('--output-file', help='Save results to JSON file')
     exp_parser.add_argument('--params', help='JSON string or file path with custom model parameters')
@@ -182,7 +198,7 @@ def main():
     # For test
     test_parser = subparsers.add_parser('test', help='Run comprehensive test suite')
     test_parser.add_argument('--models', nargs='+', choices=['xgboost', 'lightgbm', 'catboost', 'tabnet', 'ft_transformer', 'tabm'], help='Test specific models only')
-    test_parser.add_argument('--tasks', nargs='+', choices=['classification', 'regression'], help='Test specific tasks only')
+    test_parser.add_argument('--tasks', nargs='+', choices=['classification', 'regression', 'transfer'], help='Test specific tasks only')
     test_parser.add_argument('--quick', action='store_true', help='Run quick tests only')
     args = parser.parse_args()
     
@@ -356,7 +372,7 @@ def parse_model_parameters(args):
         if args.ft_eval_batch_size is not None:
             ft_params['eval_batch_size'] = args.ft_eval_batch_size
         
-    # Set defaults
+        # Set defaults
         default_ft = {
             'max_epochs': 100,
             'patience': 16,
@@ -432,7 +448,7 @@ def handle_list_datasets(loader: FriendOrFoeDataLoader, args):
     print(f"Found {len(datasets)} datasets:")
     print("-" * 50)
     for dataset_key in sorted(datasets.keys()):
-        task, collection, group, dataset = dataset_key.split('/')
+        task, collection, group, dataset = dataset_key.split('/', 3)
         print(f"Task: {task}, Collection: {collection}, Group: {group}, Dataset: {dataset}")
         
     if not datasets:
@@ -441,17 +457,17 @@ def handle_list_datasets(loader: FriendOrFoeDataLoader, args):
 
 def handle_download(loader: FriendOrFoeDataLoader, args):
     '''
-    Handle download command.
+    Handle download command for Classification, Regression, and Transfer datasets.
     '''
     print(f"Downloading dataset: {args.task}/{args.collection}/{args.group}/{args.dataset}")
     
     data = loader.load_dataset(args.task, args.collection, args.group, args.dataset)
     output_dir = Path(args.output_dir) / args.task / args.collection / args.group / args.dataset
     output_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Save files
+
+    suffix = loader._dataset_suffix(args.task, args.dataset, args.group)
     for key, df in data.items():
-        filename = f"{key}_{args.dataset}.csv"
+        filename = f"{key}_{suffix}.csv"
         filepath = output_dir / filename
         df.to_csv(filepath, index=False)
         print(f"Saved: {filepath}")
@@ -538,15 +554,20 @@ def handle_info(loader: FriendOrFoeDataLoader, args):
     print(f"Collection: {info['collection']}")
     print(f"Group: {info['group']}")
     print(f"Dataset: {info['dataset']}")
-    print(f"Number of features: {info['n_features']}")
-    print(f"Sample shape: {info['sample_shape']}")
-    print(f"Feature types: {len(set(info['dtypes'].values()))} unique types")
-    print(f"\nFirst 10 features:")
-    for i, feature in enumerate(info['feature_names'][:10]):
-        print(f"  {i+1}. {feature} ({info['dtypes'][feature]})")
-    
-    if len(info['feature_names']) > 10:
-        print(f"  ... and {len(info['feature_names']) - 10} more features")
+
+    # Clustering datasets return shape/dtype instead of n_features
+    if 'shape' in info:
+        print(f"Array shape: {info['shape']}")
+        print(f"Dtype: {info['dtype']}")
+    else:
+        print(f"Number of features: {info['n_features']}")
+        print(f"Sample shape: {info['sample_shape']}")
+        print(f"Feature types: {len(set(str(v) for v in info['dtypes'].values()))} unique types")
+        print(f"\nFirst 10 features:")
+        for i, feature in enumerate(info['feature_names'][:10]):
+            print(f"  {i+1}. {feature} ({info['dtypes'][feature]})")
+        if len(info['feature_names']) > 10:
+            print(f"  ... and {len(info['feature_names']) - 10} more features")
 
 
 def _format_size(size_bytes):
@@ -572,6 +593,7 @@ def handle_cache(args):
     found = {
         'Classification': [],
         'Regression': [],
+        'Transfer Learning': [],
         'Generative': [],
         'Clustering': [],
         'Other': []}
@@ -629,6 +651,7 @@ def handle_cache(args):
 def handle_experiment(loader: FriendOrFoeDataLoader, args):
     '''
     Handle experiment command with custom model parameters.
+    Supports Classification, Regression, and Transfer tasks.
     '''
     print(f"Running experiment with {args.model} on {args.task}/{args.collection}/{args.group}/{args.dataset}")
     
@@ -648,6 +671,12 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     y_test = data['y_test']
     
     print(f"Data loaded: {X_train.shape[0]} train, {X_test.shape[0]} test samples")
+
+    # Transfer Learning uses regression-style evaluation (predicting a continuous
+    # growth-rate target), so we treat it as 'regression' for the model layer.
+    task_type = args.task.lower()
+    if task_type == 'transfer learning':
+        task_type = 'regression'
     
     # Initialize 
     print(f"Initializing {args.model} model...")
@@ -666,7 +695,7 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     else:
         raise ValueError(f"Unknown model: {args.model}")
     
-    # Handle TabNet 
+    # Handle TabNet fit params
     fit_params = {}
     if args.model == 'tabnet':
         if args.tabnet_max_epochs is not None:
@@ -680,16 +709,15 @@ def handle_experiment(loader: FriendOrFoeDataLoader, args):
     start_time = time.time()
     
     if args.model == 'tabnet' and fit_params:
-        # For TabNet, we need to pass training params differently
-        model.fit(X_train, y_train, X_val, y_val, task_type=args.task.lower(), **fit_params)
+        model.fit(X_train, y_train, X_val, y_val, task_type=task_type, **fit_params)
     else:
-        model.fit(X_train, y_train, X_val, y_val, task_type=args.task.lower())
+        model.fit(X_train, y_train, X_val, y_val, task_type=task_type)
     
     training_time = time.time() - start_time
     print(f"Training completed in {training_time:.2f} seconds")
 
     print("Evaluating model...")
-    metrics = model.evaluate(X_test, y_test, task_type=args.task.lower())
+    metrics = model.evaluate(X_test, y_test, task_type=task_type)
     print(f"\nResults:")
     print("-" * 40)
     for metric, value in metrics.items():
@@ -755,6 +783,7 @@ def handle_test_suite(args):
 def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
     '''
     Handle SHAP analysis command.
+    Supports Classification, Regression, and Transfer datasets.
     '''
     print(f"Performing SHAP analysis on {args.model_type} model")
     print(f"Model path: {args.model_path}")
@@ -833,20 +862,19 @@ def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
     except Exception as e:
         print(f"Could not get native feature importance: {e}")
     
-    # Save 
-        if args.save_path:
-            print(f"\n Saving results...")
-            # Save SHAP feature importance
-            shap_importance_file = f"{args.save_path}_shap_importance.csv"
-            shap_results['feature_importance'].to_csv(shap_importance_file, index=False)
-            print(f"SHAP importance saved to: {shap_importance_file}")
+    if args.save_path:
+        print(f"\n Saving results...")
+        # Save SHAP feature importance
+        shap_importance_file = f"{args.save_path}_shap_importance.csv"
+        shap_results['feature_importance'].to_csv(shap_importance_file, index=False)
+        print(f"SHAP importance saved to: {shap_importance_file}")
         
         try:
             native_importance = model.get_feature_importance()
             native_importance_file = f"{args.save_path}_native_importance.csv"
             native_importance.to_csv(native_importance_file, index=False)
             print(f"Native importance saved to: {native_importance_file}")
-        except:
+        except Exception:
             pass
         
         # Save metadata
@@ -859,7 +887,11 @@ def handle_shap_analysis(loader: FriendOrFoeDataLoader, args):
             'sample_size': args.sample_size,
             'background_samples': len(X_background),
             'explanation_samples': len(X_explain),
-            'expected_value': float(shap_results['expected_value']) if hasattr(shap_results['expected_value'], '__float__') else str(shap_results['expected_value'])
+            'expected_value': (
+                float(shap_results['expected_value'])
+                if hasattr(shap_results['expected_value'], '__float__')
+                else str(shap_results['expected_value'])
+            )
         }
         
         metadata_file = f"{args.save_path}_metadata.json"
