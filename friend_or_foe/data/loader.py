@@ -27,7 +27,7 @@ class FriendOrFoeDataLoader:
     REPO_ID = "powidla/Friend-Or-Foe"
     
     # Available configurations
-    TASKS = ["Classification", "Regression"]
+    TASKS = ["Classification", "Regression", "Transfer Learning"]
     COLLECTIONS = ["AGORA", "CARVEME"] 
     GROUPS = ["50", "100"]
 
@@ -36,6 +36,10 @@ class FriendOrFoeDataLoader:
         "AGORA": "AG",
         "CARVEME": "CM",
     }
+
+    # Tasks whose filenames include the group suffix (e.g. BC-I-100)
+    # Tasks NOT in this set use bare dataset names (e.g. GR-I, TL-I)
+    TASKS_WITH_GROUP_SUFFIX = {"Classification"}
     
     # Common dataset identifiers
     CLASSIFICATION_DATASETS = [
@@ -46,7 +50,7 @@ class FriendOrFoeDataLoader:
     ]
     
     REGRESSION_DATASETS = [
-        "GR-I", "GR-II", "GR-III", "GR-IV"
+        "GR-I", "GR-II", "GR-III"
     ]
 
     TRANSFER_DATASETS = [
@@ -72,7 +76,11 @@ class FriendOrFoeDataLoader:
         self.cache_dir = cache_dir
         self.verbose = verbose
         self._repo_files = None
-        
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
     def _get_repo_files(self) -> List[str]:
         '''Get list of all files in the repository.'''
         if self._repo_files is None:
@@ -92,14 +100,34 @@ class FriendOrFoeDataLoader:
         '''Return the two-letter abbreviation for a collection name.'''
         return self.COLLECTION_ABBREV.get(collection, collection[:2].upper())
 
+    def _dataset_suffix(self, task: str, dataset: str, group: str) -> str:
+        '''
+        Return the suffix used in split filenames for a given task.
+        '''
+        if task in self.TASKS_WITH_GROUP_SUFFIX:
+            return f"{dataset}-{group}"
+        return dataset
+
+    def _task_dir_name(self, task: str) -> str:
+        '''Return the top-level directory name used in the repo for a task.'''
+        mapping = {
+            "Transfer Learning": "Transfer Learning",
+            "Classification": "Classification",
+            "Regression": "Regression",
+        }
+        return mapping.get(task, task)
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
 
     def list_available_datasets(self, task: Optional[str] = None, collection: Optional[str] = None, group: Optional[str] = None) -> Dict[str, List[str]]:
         '''
         List all available datasets with optional filtering.
         
         Args:
-            task: Filter by task type ('Classification', 'Regression',
-                  'Clustering', 'Generative', or 'Transfer')
+            task: Filter by task type ('Classification', 'Regression', 'Transfer Learning',
+                  'Clustering', or 'Generative')
             collection: Filter by collection ('AGORA' or 'CARVEME')
             group: Filter by group ('50' or '100')
             
@@ -142,13 +170,13 @@ class FriendOrFoeDataLoader:
     def load_dataset(self, task: str, collection: str, group: str, 
                     dataset: str, splits: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
         '''
-        Load a Classification or Regression dataset with all its splits.
-        
+        Load a Classification, Regression, or Transfer dataset with all its splits.
+
         Args:
-            task: Task type ('Classification' or 'Regression')
+            task: Task type ('Classification', 'Regression', or 'Transfer Learning')
             collection: Collection type ('AGORA' or 'CARVEME')
             group: Group identifier ('50' or '100') 
-            dataset: Dataset identifier (e.g., 'BC-I', 'GR-III')
+            dataset: Dataset identifier (e.g., 'BC-I', 'GR-III', 'TL-I')
             splits: List of splits to load. Default: ['train', 'val', 'test']
             
         Returns:
@@ -156,14 +184,21 @@ class FriendOrFoeDataLoader:
             
         Example:
             >>> loader = FriendOrFoeDataLoader()
+            >>> # Classification
             >>> data = loader.load_dataset('Classification', 'AGORA', '100', 'BC-I')
+            >>> # Regression
+            >>> data = loader.load_dataset('Regression', 'AGORA', '100', 'GR-I')
+            >>> # Transfer Learning
+            >>> data = loader.load_dataset('Transfer Learning', 'AGORA', '100', 'TL-I')
             >>> X_train = data['X_train']
             >>> y_train = data['y_train']
         '''
-        if task not in self.TASKS:
-            raise ValueError(f"Task must be one of {self.TASKS}. "
-                             f"For other tasks use load_generative_dataset, "
-                             f"load_clustering_dataset, or load_transfer_dataset.")
+        valid_tasks = ("Classification", "Regression", "Transfer Learning")
+        if task not in valid_tasks:
+            raise ValueError(
+                f"Task must be one of {valid_tasks}. "
+                "For other tasks use load_generative_dataset or load_clustering_dataset."
+            )
         if collection not in self.COLLECTIONS:
             raise ValueError(f"Collection must be one of {self.COLLECTIONS}")
         if group not in self.GROUPS:
@@ -171,14 +206,16 @@ class FriendOrFoeDataLoader:
             
         if splits is None:
             splits = ['train', 'val', 'test']
-            
-        base_path = f"{task}/{collection}/{group}/{dataset}"
+
+        suffix = self._dataset_suffix(task, dataset, group)
+        task_dir = self._task_dir_name(task)
+        base_path = f"{task_dir}/{collection}/{group}/{dataset}"
         
         file_mapping = {}
         for split in splits:
             for data_type in ['X', 'y']:
                 key = f"{data_type}_{split}"
-                filename = f"{key}_{dataset}-{group}.csv"
+                filename = f"{key}_{suffix}.csv"
                 file_mapping[key] = f"{base_path}/{filename}"
         
         data = {}
@@ -334,8 +371,11 @@ class FriendOrFoeDataLoader:
     def load_multiple_datasets(self, configurations: List[Tuple[str, str, str, str]]) -> Dict[str, Dict]:
         '''
         Load multiple datasets at once.
+
         Args:
             configurations: List of (task, collection, group, dataset) tuples.
+                            task may be 'Classification', 'Regression', 'Transfer Learning',
+                            'Generative', or 'Clustering'.
         Returns:
             Dictionary mapping "{task}/{collection}/{group}/{dataset}" to dataset dicts.
         '''
@@ -346,7 +386,7 @@ class FriendOrFoeDataLoader:
             config_key = f"{task}/{collection}/{group}/{dataset}"
             
             try:
-                if task in ("Classification", "Regression"):
+                if task in ("Classification", "Regression", "Transfer Learning"):
                     all_data[config_key] = self.load_dataset(task, collection, group, dataset)
                 elif task == "Generative":
                     all_data[config_key] = self.load_generative_dataset(collection, group)
@@ -366,9 +406,11 @@ class FriendOrFoeDataLoader:
         try:
             abbrev = self._collection_abbrev(collection)
 
-            if task in ("Classification", "Regression"):
-                base_path = f"{task}/{collection}/{group}/{dataset}"
-                sample_file = f"{base_path}/X_train_{dataset}-{group}.csv"
+            if task in ("Classification", "Regression", "Transfer Learning"):
+                suffix = self._dataset_suffix(task, dataset, group)
+                task_dir = self._task_dir_name(task)
+                base_path = f"{task_dir}/{collection}/{group}/{dataset}"
+                sample_file = f"{base_path}/X_train_{suffix}.csv"
                 local_path = hf_hub_download(
                     repo_id=self.REPO_ID, filename=sample_file,
                     repo_type="dataset", cache_dir=self.cache_dir
@@ -458,15 +500,16 @@ class FriendOrFoeDataLoader:
             print(f"Downloading {len(datasets)} datasets to {output_dir}")
         
         for dataset_key in tqdm(datasets.keys(), desc="Downloading datasets"):
-            task, collection, group, dataset = dataset_key.split('/')
+            task, collection, group, dataset = dataset_key.split('/', 3)
             dataset_dir = output_path / task / collection / group / dataset / "csv"
             dataset_dir.mkdir(parents=True, exist_ok=True)
             
             try:
-                if task in ("Classification", "Regression"):
+                if task in ("Classification", "Regression", "Transfer Learning"):
                     data = self.load_dataset(task, collection, group, dataset)
+                    suffix = self._dataset_suffix(task, dataset, group)
                     for key, df in data.items():
-                        df.to_csv(dataset_dir / f"{key}_{dataset}.csv", index=False)
+                        df.to_csv(dataset_dir / f"{key}_{suffix}.csv", index=False)
 
                 elif task == "Generative":
                     data = self.load_generative_dataset(collection, group)
@@ -488,16 +531,20 @@ class FriendOrFoeDataLoader:
 # Utility functions
 def quick_load(task: str = "Classification", collection: str = "AGORA", group: str = "100", dataset: str = "BC-I") -> Dict:
     '''
-    Quick utility to load a Classification or Regression dataset.
+    Quick utility to load a Classification, Regression, or Transfer dataset.
 
     Args:
-        task: Task type (default: 'Classification')
+        task: Task type ('Classification', 'Regression', or 'Transfer')
         collection: Collection type (default: 'AGORA') 
         group: Group identifier (default: '100')
         dataset: Dataset identifier (default: 'BC-I')
         
     Returns:
         Dictionary containing the loaded dataset splits.
+
+    Examples:
+        >>> quick_load('Regression', 'AGORA', '100', 'GR-I')
+        >>> quick_load('Transfer', 'AGORA', '100', 'TL-I')
     '''
     loader = FriendOrFoeDataLoader(verbose=False)
     return loader.load_dataset(task, collection, group, dataset)
@@ -543,4 +590,3 @@ def list_all_datasets() -> Dict[str, List[str]]:
     '''
     loader = FriendOrFoeDataLoader(verbose=False)
     return loader.list_available_datasets()
-    
