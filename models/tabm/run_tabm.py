@@ -8,4 +8,4 @@ for col in COLS:
     for gr in GRS:
         for ds in DSS:
             print(f"\n{'='*60}\nRunning COL={col}  GR={gr}  DS={ds}\n{'='*60}")
-            subprocess.run([sys.executable, "tabm.py", "--col", col, "--gr", gr, "--ds", ds], check=True)
+            subprocess.run([sys.executable, "core.py", "--col", col, "--gr", gr, "--ds", ds], check=True)
