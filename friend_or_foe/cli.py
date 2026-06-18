@@ -60,13 +60,13 @@ def main():
     
     # List datasets command
     list_parser = subparsers.add_parser('list-datasets', help='List all available datasets')
-    list_parser.add_argument('--task', choices=['Classification', 'Regression', 'Generative', 'Clustering'], help='Filter by task')
+    list_parser.add_argument('--task', choices=['Classification', 'Regression', 'Generative', 'Clustering', 'Transfer Learning'], help='Filter by task')
     list_parser.add_argument('--collection', choices=['AGORA', 'CARVEME'], help='Filter by collection')
     list_parser.add_argument('--group', choices=['50', '100'], help='Filter by group')
     
     # Download dataset command
     download_parser = subparsers.add_parser('download', help='Download a specific dataset')
-    download_parser.add_argument('--task', required=True, choices=['Classification', 'Regression'])
+    download_parser.add_argument('--task', required=True, choices=['Classification', 'Regression', 'Transfer Learning'])
     download_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
     download_parser.add_argument('--group', required=True, choices=['50', '100'])
     download_parser.add_argument('--dataset', required=True, help='Dataset identifier (e.g., BC-I)')
@@ -92,7 +92,7 @@ def main():
     
     # Dataset info command
     info_parser = subparsers.add_parser('info', help='Get information about a dataset')
-    info_parser.add_argument('--task', required=True, choices=['Classification', 'Regression', 'Generative', 'Clustering'])
+    info_parser.add_argument('--task', required=True, choices=['Classification', 'Regression', 'Generative', 'Clustering', 'Transfer Learning'])
     info_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
     info_parser.add_argument('--group', required=True, choices=['50', '100'])
     info_parser.add_argument('--dataset', required=True, help='Dataset identifier')
