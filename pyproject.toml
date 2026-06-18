@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "friend-or-foe"
-version = "0.0.1"
+version = "0.0.2"
 description = "A collection of microbial datasets obtained from metabolic modeling for machine learning research"
 readme = "README.md"
 license = {file = "LICENSE"}
