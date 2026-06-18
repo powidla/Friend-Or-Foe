@@ -26,7 +26,7 @@ from pytorch_tabnet.tab_model import TabNetClassifier, TabNetRegressor
 import torch.nn.functional as F
 import delu
 import scipy.special
-import sklearn.metrics
+from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, r2_score, mean_squared_error
 import sklearn.preprocessing
 from tqdm import tqdm
 import math
