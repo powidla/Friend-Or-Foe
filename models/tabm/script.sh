@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -A Berzelius-2025-10
+#SBATCH -A 
 #SBATCH --output=logs/output_%j.log
 #SBATCH --error=logs/error_%j.log
 #SBATCH --gpus 1
@@ -7,7 +7,7 @@
 
 
 echo "Running model..."
-python main.py  
+python run_tabm.py  
 
 # Deactivate environment after execution
 
