@@ -18,9 +18,10 @@
 - friend_or_foe: contains source code
 
 # Getting started
-Download the package via PyPi manager
+Download the package via PyPi manager and install catboost
 `````bash
 pip install friend_or_foe
+pip install catboost
 `````
 
 Basic example of loading through the package and listing all the datasets from the compendium
