@@ -132,7 +132,7 @@ class FriendOrFoeDataLoader:
     # Public API
     # ------------------------------------------------------------------
 
-    def list_available_datasets(self, task: Optional[str] = None, collection: Optional[str] = None, group: Optional[str] = None) -> Dict[str, List[str]:
+    def list_available_datasets(self, task: Optional[str] = None, collection: Optional[str] = None, group: Optional[str] = None) -> Dict[str, List[str]]:
         '''
         List all available datasets with optional filtering.
         
