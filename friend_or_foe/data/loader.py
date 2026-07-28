@@ -31,6 +31,9 @@ class FriendOrFoeDataLoader:
     COLLECTIONS = ["AGORA", "CARVEME"] 
     GROUPS = ["50", "100"]
 
+    METADATA_TASKS = {"Classification", "Regression", "Transfer Learning"}
+    METADATA_DIR = "utils/raw"
+
     # Collection abbreviations used in filenames
     COLLECTION_ABBREV = {
         "AGORA": "AG",
@@ -116,12 +119,20 @@ class FriendOrFoeDataLoader:
             "Regression": "Regression",
         }
         return mapping.get(task, task)
+        
+    def _metadata_filename(self, dataset: str, group: str, collection: str) -> str:
+        '''Return filename: {dataset}-{group}-{collection_abbrev}-MiMj.csv'''
+        abbrev = self._collection_abbrev(collection)
+        return f"{dataset}-{group}-{abbrev}-MiMj.csv"
 
+    def _metadata_path(self, dataset: str, group: str, collection: str) -> str:
+        '''Full repo-relative path to the MiMj metadata file.'''
+        return f"{self.METADATA_DIR}/{self._metadata_filename(dataset, group, collection)}"
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
-    def list_available_datasets(self, task: Optional[str] = None, collection: Optional[str] = None, group: Optional[str] = None) -> Dict[str, List[str]]:
+    def list_available_datasets(self, task: Optional[str] = None, collection: Optional[str] = None, group: Optional[str] = None) -> Dict[str, List[str], download_metadata: bool = False]:
         '''
         List all available datasets with optional filtering.
         
@@ -167,8 +178,48 @@ class FriendOrFoeDataLoader:
         
         return datasets
 
-    def load_dataset(self, task: str, collection: str, group: str, 
-                    dataset: str, splits: Optional[List[str]] = None) -> Dict[str, pd.DataFrame]:
+    def load_metadata(self, collection: str, group: str, dataset: str, task: Optional[str] = None, rename_columns: bool = True) -> pd.DataFrame:
+        '''
+        Load the MiMj microbe-pair metadata file, e.g.
+        utils/raw/BC-I-100-AG-MiMj.csv for BC-I/AGORA/100.
+        Columns: index of Mi, index of Mj, split (train/val/test).
+        '''
+        if task is not None and task not in self.METADATA_TASKS:
+            raise ValueError(
+                f"Metadata (MiMj) files are only available for {sorted(self.METADATA_TASKS)}, "
+                f"not '{task}'."
+            )
+        if collection not in self.COLLECTIONS:
+            raise ValueError(f"Collection must be one of {self.COLLECTIONS}")
+        if group not in self.GROUPS:
+            raise ValueError(f"Group must be one of {self.GROUPS}")
+
+        file_path = self._metadata_path(dataset, group, collection)
+
+        if self.verbose:
+            print(f"Loading metadata: {file_path}")
+
+        local_path = hf_hub_download(
+            repo_id=self.REPO_ID,
+            filename=file_path,
+            repo_type="dataset",
+            cache_dir=self.cache_dir
+        )
+        meta = pd.read_csv(local_path)
+
+        if rename_columns and len(meta.columns) >= 3:
+            renamed = dict(zip(meta.columns[:2], ["Mi", "Mj"]))
+            third_col = meta.columns[2]
+            if third_col.lower() != "split":
+                renamed[third_col] = "split"
+            meta = meta.rename(columns=renamed)
+
+        if self.verbose:
+            print(f"  Metadata shape: {meta.shape}")
+
+        return meta
+    
+    def load_dataset(self, task: str, collection: str, group: str, dataset: str, splits: Optional[List[str]] = None, download_metadata: bool = False) -> Dict[str, pd.DataFrame]:
         '''
         Load a Classification, Regression, or Transfer dataset with all its splits.
 
@@ -242,6 +293,12 @@ class FriendOrFoeDataLoader:
                     
             except Exception as e:
                 warnings.warn(f"Failed to load {key} from {file_path}: {e}")
+                
+        if download_metadata:                                                    
+            try:
+                data['metadata'] = self.load_metadata(collection, group, dataset, task=task)
+            except Exception as e:
+                warnings.warn(f"Failed to load metadata for {task}/{collection}/{group}/{dataset}: {e}")
                 
         return data
 
@@ -484,7 +541,7 @@ class FriendOrFoeDataLoader:
     # download_all_datasets
     # ------------------------------------------------------------------
 
-    def download_all_datasets(self, output_dir: str = "FOFdata"):
+    def download_all_datasets(self, output_dir: str = "FOFdata", download_metadata: bool = False):
         '''
         Download all datasets and organise them in the expected directory structure.
         
@@ -510,6 +567,12 @@ class FriendOrFoeDataLoader:
                     suffix = self._dataset_suffix(task, dataset, group)
                     for key, df in data.items():
                         df.to_csv(dataset_dir / f"{key}_{suffix}.csv", index=False)
+                    if download_metadata:                               
+                        try:
+                            meta = self.load_metadata(collection, group, dataset, task=task)
+                            meta.to_csv(dataset_dir / self._metadata_filename(dataset, group, collection), index=False)
+                        except Exception as e:
+                            warnings.warn(f"Failed to download metadata for {dataset_key}: {e}")
 
                 elif task == "Generative":
                     data = self.load_generative_dataset(collection, group)
