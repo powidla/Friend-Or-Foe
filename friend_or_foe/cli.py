@@ -87,6 +87,7 @@ def main():
     download_parser.add_argument('--group', required=True, choices=['50', '100'])
     download_parser.add_argument('--dataset', required=True, help='Dataset identifier (e.g., BC-I, GR-I, TL-I)')
     download_parser.add_argument('--output-dir', default='./FOFdata', help='Output directory')
+    download_parser.add_argument('--with-metadata', action='store_true', help='Also download the MiMj microbe-pair metadata file for this dataset')
 
     # Download generative
     dl_gen_parser = subparsers.add_parser('download-generative', help='Download a Generative dataset')
@@ -105,6 +106,7 @@ def main():
     # Download all datasets command
     download_all_parser = subparsers.add_parser('download-all', help='Download all datasets')
     download_all_parser.add_argument('--output-dir', default='./FOFdata', help='Output directory')
+    download_all_parser.add_argument('--with-metadata', action='store_true', help='Also download MiMj metadata for supervised-task datasets')
     
     # Dataset info command
     info_parser = subparsers.add_parser('info', help='Get information about a dataset')
@@ -112,7 +114,6 @@ def main():
     info_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
     info_parser.add_argument('--group', required=True, choices=['50', '100'])
     info_parser.add_argument('--dataset', required=True, help='Dataset identifier')
-
     # Cache local files
     cache_parser = subparsers.add_parser('cache', help='List datasets that have been downloaded locally')
     cache_parser.add_argument('--data-dir', default='./FOFdata', help='Root directory (default: ./FOFdata)')
@@ -141,7 +142,7 @@ def main():
     exp_parser.add_argument('--params', help='JSON string or file path with custom model parameters')
     
     # Common parameters for all models
-    exp_parser.add_argument('--random-state', type=int, default=42, help='Random state for reproducibility')
+    exp_parser.add_argument('--random-state', type=int, default=4221, help='Random state for reproducibility')
     exp_parser.add_argument('--verbose', action='store_true', help='Enable verbose training output')
     
     # XGBoost parameters
@@ -181,6 +182,13 @@ def main():
     exp_parser.add_argument('--ft-batch-size', type=int, help='FT-Transformer: Batch size')
     exp_parser.add_argument('--ft-eval-batch-size', type=int, help='FT-Transformer: Evaluation batch size')
 
+    #metadata parameters
+    metadata_parser = subparsers.add_parser('metadata', help='Download the MiMj microbe-pair metadata file for a dataset')
+    metadata_parser.add_argument('--task', required=True, choices=['Classification', 'Regression', 'Transfer Learning'])
+    metadata_parser.add_argument('--collection', required=True, choices=['AGORA', 'CARVEME'])
+    metadata_parser.add_argument('--group', required=True, choices=['50', '100'])
+    metadata_parser.add_argument('--dataset', required=True, help='Dataset identifier')
+    metadata_parser.add_argument('--output-dir', default='./FOFdata', help='Output directory')
     
     # # TabM parameters
     exp_parser.add_argument('--tabm-arch-type', choices=['tabm', 'tabm-mini'], default='tabm', help='TabM: Architecture type')
@@ -230,6 +238,8 @@ def main():
             handle_shap_analysis(loader, args)
         elif args.command == 'test':
             handle_test_suite(args)
+        elif args.command == 'metadata':
+            handle_metadata(loader, args)
         else:
             parser.print_help()
             
@@ -456,22 +466,30 @@ def handle_list_datasets(loader: FriendOrFoeDataLoader, args):
 
 
 def handle_download(loader: FriendOrFoeDataLoader, args):
-    '''
-    Handle download command for Classification, Regression, and Transfer datasets.
-    '''
     print(f"Downloading dataset: {args.task}/{args.collection}/{args.group}/{args.dataset}")
-    
-    data = loader.load_dataset(args.task, args.collection, args.group, args.dataset)
+
+    with_metadata = getattr(args, 'with_metadata', False)
+    data = loader.load_dataset(args.task, args.collection, args.group, args.dataset,
+                                download_metadata=with_metadata)
     output_dir = Path(args.output_dir) / args.task / args.collection / args.group / args.dataset
     output_dir.mkdir(parents=True, exist_ok=True)
 
     suffix = loader._dataset_suffix(args.task, args.dataset, args.group)
     for key, df in data.items():
+        if key == 'metadata':
+            continue
         filename = f"{key}_{suffix}.csv"
         filepath = output_dir / filename
         df.to_csv(filepath, index=False)
         print(f"Saved: {filepath}")
-    
+
+    if with_metadata and 'metadata' in data:
+        meta_filepath = output_dir / loader._metadata_filename(args.dataset, args.group, args.collection)
+        data['metadata'].to_csv(meta_filepath, index=False)
+        print(f"Saved: {meta_filepath}")
+    elif with_metadata:
+        print("Warning: --with-metadata was set but the metadata file could not be downloaded.")
+
     print(f"Dataset saved to: {output_dir}")
 
 
@@ -534,7 +552,8 @@ def handle_download_all(loader: FriendOrFoeDataLoader, args):
     Handle download-all command.
     '''
     print(f"Downloading all datasets to: {args.output_dir}")
-    loader.download_all_datasets(args.output_dir)
+    with_metadata = getattr(args, 'with_metadata', False)
+    loader.download_all_datasets(args.output_dir, download_metadata=with_metadata)
     print("Download complete!")
 
 
@@ -646,6 +665,16 @@ def handle_cache(args):
     print()
     print("-" * 60)
     print(f"Total: {total_datasets} dataset(s), {_format_size(total_size_bytes)}")
+
+
+def handle_metadata(loader: FriendOrFoeDataLoader, args):
+    print(f"Downloading metadata for: {args.task}/{args.collection}/{args.group}/{args.dataset}")
+    meta = loader.load_metadata(args.collection, args.group, args.dataset, task=args.task)
+    output_dir = Path(args.output_dir) / args.task / args.collection / args.group / args.dataset
+    output_dir.mkdir(parents=True, exist_ok=True)
+    filepath = output_dir / loader._metadata_filename(args.dataset, args.group, args.collection)
+    meta.to_csv(filepath, index=False)
+    print(f"Saved: {filepath}  {meta.shape}")
 
 
 def handle_experiment(loader: FriendOrFoeDataLoader, args):
