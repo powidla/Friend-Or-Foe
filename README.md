@@ -23,6 +23,7 @@ Download the package via PyPi manager and install catboost
 pip install friend_or_foe
 pip install catboost
 `````
+If you experience issues with either ```xgboost```/```lightgbm``` or ```catboost```, please install them separately into the environment.
 
 Basic example of loading through the package and listing all the datasets from the compendium
 `````python
